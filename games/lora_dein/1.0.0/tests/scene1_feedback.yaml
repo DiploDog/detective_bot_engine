@@ -1,0 +1,100 @@
+name: scene1_feedback
+cases:
+  - name: feedback_1_2
+    initial: {scene: lora_scene1}
+    input: {text: "1,2"}
+    expect:
+      outcome: feedback_1_2
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, contains: "Что касается размера обуви"}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}
+
+  - name: feedback_1_4
+    initial: {scene: lora_scene1}
+    input: {text: "1,4"}
+    expect:
+      outcome: feedback_1_4
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, contains: "Что касается яда"}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}
+
+  - name: feedback_1_5
+    initial: {scene: lora_scene1}
+    input: {text: "1,5"}
+    expect:
+      outcome: feedback_1_5
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, contains: "Томми работал на студии Golden Rain"}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}
+
+  - name: feedback_1_6
+    initial: {scene: lora_scene1}
+    input: {text: "1,6"}
+    expect:
+      outcome: feedback_1_6
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, contains: "Отсутствие мотива не является весомой уликой"}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}
+
+  - name: feedback_2_3
+    initial: {scene: lora_scene1}
+    input: {text: "2,3"}
+    expect:
+      outcome: feedback_2_3
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, contains: "Что касается размера обуви"}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}
+
+  - name: feedback_3_4
+    initial: {scene: lora_scene1}
+    input: {text: "3,4"}
+    expect:
+      outcome: feedback_3_4
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, contains: "Что касается яда"}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}
+
+  - name: feedback_3_5
+    initial: {scene: lora_scene1}
+    input: {text: "3,5"}
+    expect:
+      outcome: feedback_3_5
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, contains: "Но мог ли он попасть на студию в другое время?"}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}
+
+  - name: feedback_3_6
+    initial: {scene: lora_scene1}
+    input: {text: "3,6"}
+    expect:
+      outcome: feedback_3_6
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, contains: "Отсутствие мотива не является весомой уликой"}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}
+
+  - name: generic_wrong_2_4
+    initial: {scene: lora_scene1}
+    input: {text: "2,4"}
+    expect:
+      outcome: generic_wrong_evidence
+      scene: lora_scene1
+      variables: {wrong_scene1: 1}
+      actions:
+        - {type: text, exact: "❌ Хорошая попытка, но нужно найти минимум 2 настоящие улики! Попробуйте еще раз."}
+        - {type: text, contains: "ДЕТЕКТИВНОЕ ДЕЛО"}

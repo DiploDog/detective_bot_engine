@@ -1,0 +1,24 @@
+schema_version: 1
+entry_scene: only_scene
+variables: {}
+scheduled_actions: {}
+scenes:
+  only_scene:
+    on_enter:
+      - type: text
+        text: "Older fixture."
+    interactions:
+      - id: finish
+        input:
+          type: text
+          normalize: [trim, lowercase]
+        outcomes:
+          - id: done
+            when:
+              match:
+                strategy: exact
+                value: "done"
+            transition: complete
+          - id: wait
+            when: otherwise
+            transition: stay

@@ -1,0 +1,166 @@
+name: wrong_answers_and_parser
+cases:
+  - name: scene2_embedded_digits_invalid
+    initial: {scene: lora_scene2}
+    input: {text: "1abc3"}
+    expect:
+      outcome: invalid_format
+      input_status: invalid
+      invalid_reason: syntax
+      scene: lora_scene2
+      variables: {wrong_scene2: 0}
+      actions:
+        - {type: text, exact: "❌ Пожалуйста, введите точное количество ответов из списка (от 1 до 6) через запятую или пробел."}
+
+  - name: scene2_duplicates_invalid
+    initial: {scene: lora_scene2}
+    input: {text: "1,1"}
+    expect:
+      outcome: invalid_format
+      input_status: invalid
+      invalid_reason: duplicate
+      scene: lora_scene2
+      variables: {wrong_scene2: 0}
+      actions:
+        - {type: text, exact: "❌ Пожалуйста, введите точное количество ответов из списка (от 1 до 6) через запятую или пробел."}
+
+  - name: scene2_empty_invalid
+    initial: {scene: lora_scene2}
+    input: {text: ""}
+    expect:
+      outcome: invalid_format
+      input_status: invalid
+      invalid_reason: empty
+      scene: lora_scene2
+      variables: {wrong_scene2: 0}
+      actions:
+        - {type: text, exact: "❌ Пожалуйста, введите точное количество ответов из списка (от 1 до 6) через запятую или пробел."}
+
+  - name: scene2_out_of_range_invalid
+    initial: {scene: lora_scene2}
+    input: {text: "7,1"}
+    expect:
+      outcome: invalid_format
+      input_status: invalid
+      invalid_reason: out_of_range
+      scene: lora_scene2
+      variables: {wrong_scene2: 0}
+      actions:
+        - {type: text, exact: "❌ Пожалуйста, введите точное количество ответов из списка (от 1 до 6) через запятую или пробел."}
+
+  - name: scene2_too_few_invalid
+    initial: {scene: lora_scene2}
+    input: {text: "1"}
+    expect:
+      outcome: invalid_format
+      input_status: invalid
+      invalid_reason: too_few
+      scene: lora_scene2
+      variables: {wrong_scene2: 0}
+      actions:
+        - {type: text, exact: "❌ Пожалуйста, введите точное количество ответов из списка (от 1 до 6) через запятую или пробел."}
+
+  - name: scene3_wrong_1
+    initial: {scene: lora_scene3}
+    input: {text: "1"}
+    expect:
+      outcome: wrong_killer
+      scene: lora_scene3
+      status: in_progress
+      variables: {wrong_scene3: 1}
+      actions:
+        - {type: text, exact: "❌ Хорошая попытка, но это не тот человек! Попробуйте еще раз."}
+        - {type: text, contains: "ТРЕТЬЯ СЦЕНА"}
+
+  - name: scene3_wrong_2
+    initial: {scene: lora_scene3}
+    input: {text: "2"}
+    expect:
+      outcome: wrong_killer
+      scene: lora_scene3
+      status: in_progress
+      variables: {wrong_scene3: 1}
+      actions:
+        - {type: text, exact: "❌ Хорошая попытка, но это не тот человек! Попробуйте еще раз."}
+        - {type: text, contains: "ТРЕТЬЯ СЦЕНА"}
+
+  - name: scene3_wrong_3
+    initial: {scene: lora_scene3}
+    input: {text: "3"}
+    expect:
+      outcome: wrong_killer
+      scene: lora_scene3
+      status: in_progress
+      variables: {wrong_scene3: 1}
+      actions:
+        - {type: text, exact: "❌ Хорошая попытка, но это не тот человек! Попробуйте еще раз."}
+        - {type: text, contains: "ТРЕТЬЯ СЦЕНА"}
+
+  - name: scene3_wrong_4
+    initial: {scene: lora_scene3}
+    input: {text: "4"}
+    expect:
+      outcome: wrong_killer
+      scene: lora_scene3
+      status: in_progress
+      variables: {wrong_scene3: 1}
+      actions:
+        - {type: text, exact: "❌ Хорошая попытка, но это не тот человек! Попробуйте еще раз."}
+        - {type: text, contains: "ТРЕТЬЯ СЦЕНА"}
+
+  - name: scene3_wrong_5
+    initial: {scene: lora_scene3}
+    input: {text: "5"}
+    expect:
+      outcome: wrong_killer
+      scene: lora_scene3
+      status: in_progress
+      variables: {wrong_scene3: 1}
+      actions:
+        - {type: text, exact: "❌ Хорошая попытка, но это не тот человек! Попробуйте еще раз."}
+        - {type: text, contains: "ТРЕТЬЯ СЦЕНА"}
+
+  - name: scene1_duplicate_not_success
+    initial: {scene: lora_scene1}
+    input: {text: "1,1,3"}
+    expect:
+      outcome: invalid_format
+      input_status: invalid
+      invalid_reason: duplicate
+      scene: lora_scene1
+      variables: {wrong_scene1: 0}
+      actions:
+        - {type: text, exact: "❌ Пожалуйста, введите точное количество ответов из списка (от 1 до 6) через запятую или пробел."}
+
+  - name: scene1_comma_separator
+    initial: {scene: lora_scene1}
+    input: {text: "1, 3"}
+    expect:
+      outcome: correct_evidence
+      scene: lora_scene2
+      variables: {wrong_scene1: 0}
+      actions:
+        - {type: text, contains: "вам удалось оправдать невиновного"}
+        - {type: text, contains: "ВТОРАЯ СЦЕНА"}
+
+  - name: scene1_whitespace_separator
+    initial: {scene: lora_scene1}
+    input: {text: "1 3"}
+    expect:
+      outcome: correct_evidence
+      scene: lora_scene2
+      variables: {wrong_scene1: 0}
+      actions:
+        - {type: text, contains: "вам удалось оправдать невиновного"}
+        - {type: text, contains: "ВТОРАЯ СЦЕНА"}
+
+  - name: scene1_word_and_separator
+    initial: {scene: lora_scene1}
+    input: {text: "1 и 3"}
+    expect:
+      outcome: correct_evidence
+      scene: lora_scene2
+      variables: {wrong_scene1: 0}
+      actions:
+        - {type: text, contains: "вам удалось оправдать невиновного"}
+        - {type: text, contains: "ВТОРАЯ СЦЕНА"}

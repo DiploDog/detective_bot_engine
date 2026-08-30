@@ -1,0 +1,291 @@
+schema_version: 1
+entry_scene: aliases
+
+variables:
+  safe_opened:
+    type: boolean
+    default: false
+  wrong_attempts:
+    type: integer
+    default: 0
+
+scheduled_actions:
+  reveal_articles:
+    guard:
+      session_status: in_progress
+      current_scene: articles
+    actions:
+      - type: text
+        text: "Articles are now available."
+
+scenes:
+  aliases:
+    on_enter:
+      - type: text
+        text: "Name the visitor."
+    interactions:
+      - id: answer_name
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace, replace_yo]
+        outcomes:
+          - id: leo
+            when:
+              match:
+                strategy: aliases
+                values: ["лео", "лео миллер"]
+            actions:
+              - type: text
+                text: "Correct."
+            transition:
+              goto: code
+          - id: wrong_name
+            when: otherwise
+            actions:
+              - type: text
+                text: "Try again."
+            transition: stay
+
+  code:
+    on_enter:
+      - type: text
+        text: "Enter the safe code."
+    interactions:
+      - id: safe_code
+        input:
+          type: text
+          normalize: [trim]
+        outcomes:
+          - id: code_accepted
+            when:
+              match:
+                strategy: exact
+                value: "1503"
+            actions:
+              - type: text
+                text: "The safe opens."
+              - type: media
+                asset: clue_document
+                caption: "A document from the safe."
+            effects:
+              - type: set
+                variable: safe_opened
+                value: true
+            transition:
+              goto: pair
+          - id: wrong_code
+            when: otherwise
+            actions:
+              - type: text
+                text: "Wrong code."
+            transition: stay
+
+  pair:
+    on_enter:
+      - type: text
+        text: "Choose evidence 11 and 17."
+    interactions:
+      - id: evidence_pair
+        input:
+          type: numeric_selection
+          separators: [comma, whitespace, word_and]
+          unique: true
+          min_items: 2
+          max_items: 2
+          allowed_values: [11, 17, 20]
+        outcomes:
+          - id: pair_invalid
+            when: invalid
+            actions:
+              - type: text
+                text: "Use two unique numbers."
+            transition: stay
+          - id: pair_correct
+            when:
+              selection:
+                equals: [11, 17]
+            actions:
+              - type: text
+                text: "Both clues are correct."
+            transition:
+              goto: threshold
+          - id: pair_partial
+            when:
+              selection:
+                intersection_with: [11, 17]
+                intersection_size: 1
+            actions:
+              - type: text
+                text: "One clue is correct."
+            transition: stay
+          - id: pair_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Neither clue is correct."
+            transition: stay
+
+  threshold:
+    on_enter:
+      - type: text
+        text: "Choose two or three suspects."
+    interactions:
+      - id: suspects
+        input:
+          type: numeric_selection
+          separators: [comma, whitespace, word_and]
+          unique: true
+          min_items: 2
+          max_items: 3
+          allowed_values: [1, 2, 3, 4, 5, 6]
+        outcomes:
+          - id: suspects_invalid
+            when: invalid
+            actions:
+              - type: text
+                text: "Choose two or three unique values."
+            transition: stay
+          - id: suspects_correct
+            when:
+              selection:
+                subset_of: [1, 2, 6]
+                size:
+                  min: 2
+                  max: 3
+            actions:
+              - type: text
+                text: "The suspect set is valid."
+            transition:
+              goto: hint
+          - id: suspects_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "That set contains a wrong suspect."
+            effects:
+              - type: increment
+                variable: wrong_attempts
+                by: 1
+            transition:
+              goto: threshold
+
+  hint:
+    on_enter:
+      - type: choices
+        interaction: hint_decision
+        text: "Do you want a hint?"
+    interactions:
+      - id: hint_decision
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes":
+              label: "Yes"
+              text_aliases: ["yes", "да"]
+            "no":
+              label: "No"
+              text_aliases: ["no", "нет"]
+        outcomes:
+          - id: hint_yes
+            when:
+              choice: "yes"
+            actions:
+              - type: text
+                text: "Look at the timeline."
+            effects:
+              - type: schedule
+                action: reveal_articles
+                delay_seconds: 300
+                idempotency_key: reveal_articles
+            transition:
+              goto: articles
+          - id: hint_no
+            when:
+              choice: "no"
+            actions:
+              - type: text
+                text: "Continue without a hint."
+            transition: stay
+
+  articles:
+    interactions:
+      - id: readiness
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace]
+        outcomes:
+          - id: ready
+            when:
+              match:
+                strategy: exact
+                value: "готов назвать убийцу"
+            actions:
+              - type: text
+                text: "Name the killer."
+            transition:
+              goto: finish
+      - id: read_article
+        input:
+          type: numeric_selection
+          separators: [comma, whitespace]
+          unique: true
+          min_items: 1
+          max_items: 1
+          allowed_values: [1, 2, 3]
+        outcomes:
+          - id: article_1
+            when:
+              selection:
+                equals: [1]
+            actions:
+              - type: text
+                text: "Article one."
+            transition: stay
+          - id: article_2
+            when:
+              selection:
+                equals: [2]
+            actions:
+              - type: text
+                text: "Article two."
+            transition: stay
+          - id: article_3
+            when:
+              selection:
+                equals: [3]
+            actions:
+              - type: text
+                text: "Article three."
+            transition: stay
+    fallback:
+      actions:
+        - type: text
+          text: "Choose article 1-3 or state readiness."
+      transition: stay
+
+  finish:
+    on_enter:
+      - type: text
+        text: "Who is the killer?"
+    interactions:
+      - id: killer
+        input:
+          type: text
+          normalize: [trim, lowercase]
+        outcomes:
+          - id: complete_game
+            when:
+              match:
+                strategy: contains
+                values: ["mark"]
+            actions:
+              - type: text
+                text: "Investigation complete."
+            transition: complete
+          - id: wrong_killer
+            when: otherwise
+            actions:
+              - type: text
+                text: "Try another suspect."
+            transition: stay

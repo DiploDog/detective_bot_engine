@@ -1,0 +1,51 @@
+schema_version: 1
+entry_scene: start
+variables:
+  label:
+    type: string
+    default: ""
+scheduled_actions:
+  unguarded:
+    actions:
+      - type: text
+        text: "Eventually."
+scenes:
+  start:
+    on_enter:
+      - type: media
+        asset: unknown_asset
+      - type: choices
+        interaction: missing_interaction
+        text: "Broken choices."
+    interactions:
+      - id: bad_numbers
+        input:
+          type: numeric_selection
+          separators: [comma]
+          unique: true
+          min_items: 3
+          max_items: 2
+          allowed_values: [1, 2]
+        outcomes:
+          - id: catch_all
+            when: otherwise
+            effects:
+              - type: increment
+                variable: label
+              - type: set
+                variable: label
+                value: true
+              - type: set
+                variable: missing
+                value: true
+              - type: schedule
+                action: missing_template
+                delay_seconds: 10
+                idempotency_key: missing
+            transition:
+              goto: nowhere
+          - id: too_late
+            when:
+              selection:
+                equals: [9]
+            transition: stay

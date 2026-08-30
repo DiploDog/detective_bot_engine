@@ -1,0 +1,11 @@
+schema_version: 1
+game_id: synthetic_detective
+version: 1.10.0
+display_title: "Synthetic Detective"
+description: "Fixture covering the schema v1 mechanics."
+language: en
+game_file: game.yaml
+assets:
+  clue_document:
+    type: document
+    path: assets/clue.txt

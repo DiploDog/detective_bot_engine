@@ -1,0 +1,8 @@
+schema_version: 1
+game_id: lora_dein
+version: 1.0.0
+display_title: "Дело Лоры Дейн"
+description: "Расследование убийства актрисы Лоры Дейн."
+language: ru
+game_file: game.yaml
+assets: {}

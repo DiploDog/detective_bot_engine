@@ -1,0 +1,55 @@
+name: happy_path
+steps:
+  - start: true
+    expect:
+      scene: lora_scene1
+      status: in_progress
+      variables:
+        wrong_scene1: 0
+        wrong_scene2: 0
+        wrong_scene3: 0
+      actions:
+        - type: text
+          contains: "ДЕТЕКТИВНОЕ ДЕЛО: УБИЙСТВО ЛОРЫ ДЕЙН"
+
+  - input:
+      text: "1,3"
+    expect:
+      outcome: correct_evidence
+      scene: lora_scene2
+      variables:
+        wrong_scene1: 0
+      actions:
+        - type: text
+          exact: "🎉 Поздравляю, вам удалось оправдать невиновного! Сможете ли вы найти тех, у кого был мотив? Открывайте дополнительный конверт №1!"
+        - type: text
+          contains: "ВТОРАЯ СЦЕНА: ПОИСК ПОДОЗРЕВАЕМЫХ"
+
+  - input:
+      text: "1 и 6"
+    expect:
+      outcome: correct_suspects
+      scene: lora_scene3
+      variables:
+        wrong_scene2: 0
+      actions:
+        - type: text
+          exact: "🎉 Поздравляю, вам удалось найти подозреваемых! Сможете ли вы доказать их виновность? Открывайте дополнительный конверт №2"
+        - type: text
+          contains: "ТРЕТЬЯ СЦЕНА: ОПРЕДЕЛЕНИЕ УБИЙЦЫ"
+
+  - input:
+      text: "6"
+    expect:
+      outcome: correct_killer
+      scene: lora_scene3
+      status: completed
+      variables:
+        wrong_scene1: 0
+        wrong_scene2: 0
+        wrong_scene3: 0
+      actions:
+        - type: text
+          exact: "🎉 Поздравляю, вам удалось определить убийцу! Вскрывайте последний конверт с признанием преступника!"
+        - type: text
+          exact: "🎊 Вы успешно завершили расследование! Спасибо за игру!"

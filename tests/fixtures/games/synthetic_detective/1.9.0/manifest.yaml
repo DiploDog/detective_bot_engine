@@ -1,0 +1,8 @@
+schema_version: 1
+game_id: synthetic_detective
+version: 1.9.0
+display_title: "Synthetic Detective"
+description: "Older valid fixture version."
+language: en
+game_file: game.yaml
+assets: {}
