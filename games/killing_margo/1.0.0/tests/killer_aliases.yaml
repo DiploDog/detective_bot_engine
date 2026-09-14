@@ -1,0 +1,26 @@
+name: killer_aliases
+cases:
+  - name: mark
+    initial: {scene: margo_killer}
+    input: {text: "марк"}
+    expect: {outcome: killer_correct, status: completed}
+  - name: mark_davis
+    initial: {scene: margo_killer}
+    input: {text: "марк дэвис"}
+    expect: {outcome: killer_correct, status: completed}
+  - name: mark_devis
+    initial: {scene: margo_killer}
+    input: {text: "марк девис"}
+    expect: {outcome: killer_correct, status: completed}
+  - name: jacob
+    initial: {scene: margo_killer}
+    input: {text: "джейкоб"}
+    expect: {outcome: killer_correct, status: completed}
+  - name: jacob_adams
+    initial: {scene: margo_killer}
+    input: {text: "джейкоб адамс"}
+    expect: {outcome: killer_correct, status: completed}
+  - name: adams
+    initial: {scene: margo_killer}
+    input: {text: "адамс"}
+    expect: {outcome: killer_correct, status: completed}

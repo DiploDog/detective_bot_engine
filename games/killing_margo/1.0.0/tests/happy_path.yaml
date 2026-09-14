@@ -1,0 +1,109 @@
+name: happy_path
+steps:
+  - start: true
+    expect:
+      scene: margo_q1_initial
+      status: in_progress
+      actions:
+        - {type: text, contains: "Привет! Меня зовут Том Митчел."}
+
+  - input: {text: "нет"}
+    expect:
+      outcome: q1_initial_correct
+      scene: margo_q2
+      actions:
+        - {type: text, exact: "Супер!"}
+        - {type: text, exact: "Какая улика на это указывает? Напиши номер улики из списка улик по делу."}
+
+  - input: {text: "11"}
+    expect:
+      outcome: q2_correct
+      scene: margo_q3
+      actions:
+        - {type: text, contains: "Именно судмедэксперт подтверждает"}
+        - {type: text, exact: "Ты уже должен был догадаться, кто это. Напиши мне имя этого человека."}
+
+  - input: {text: "лео миллер"}
+    expect:
+      outcome: q3_correct
+      scene: margo_q4
+      actions:
+        - {type: text, exact: "Твои дедуктивные способности поразительны!"}
+        - {type: text, contains: "Какие 2 улики это доказывают?"}
+
+  - input: {text: "11,17"}
+    expect:
+      outcome: q4_correct
+      scene: margo_safe
+      actions:
+        - {type: text, exact: "Отлично! Наконец-то мы разобрались с братом жертвы."}
+        - {type: media, asset: safe_closed}
+
+  - input: {text: "1503"}
+    expect:
+      outcome: safe_correct
+      scene: margo_q5
+      actions:
+        - {type: media, asset: safe_open}
+        - {type: text, contains: "есть еще 2 человека, кто врет"}
+
+  - input: {text: "виктор и джулиан"}
+    expect:
+      outcome: q5_correct
+      scene: margo_q6
+      actions:
+        - {type: text, exact: "Да ты чертов гений!"}
+        - {type: text, contains: "Сможешь указать 2 улики"}
+
+  - input: {text: "8 16"}
+    expect:
+      outcome: q6_correct
+      scene: margo_q7
+      actions:
+        - {type: text, exact: "Не перестаю тебе удивляться. Верно!"}
+        - {type: text, contains: "кому принадлежит ник «аптека»"}
+
+  - input: {text: "оливия"}
+    expect:
+      outcome: q7_correct
+      scene: margo_q8
+      actions:
+        - {type: text, contains: "«Аптека» и есть Оливия"}
+        - {type: text, exact: "Могла ли Оливия убить Елену?"}
+
+  - input: {text: "не"}
+    expect:
+      outcome: q8_correct
+      scene: margo_q9
+      actions:
+        - {type: text, exact: "Верно, ты, наверное, понял, почему?"}
+        - {type: text, contains: "Какие 2 улики помогли тебе понять"}
+
+  - input: {text: "31 и 33"}
+    expect:
+      outcome: q9_correct
+      scene: margo_articles
+      actions:
+        - {type: text, exact: "ты прав"}
+        - {type: text, contains: "Вот мы и на финишной прямой."}
+        - {type: media, asset: phone_recording}
+      scheduled:
+        - action: reveal_articles
+          due_in_seconds: 300
+          idempotency_key: reveal_articles
+
+  - input: {text: "  ГОТОВ   НАЗВАТЬ УБИЙЦУ  "}
+    expect:
+      outcome: ready_for_killer
+      scene: margo_killer
+      actions:
+        - {type: text, exact: "Я в предвкушении! Итак, удиви меня!"}
+
+  - input: {text: "марк дэвис"}
+    expect:
+      outcome: killer_correct
+      scene: margo_killer
+      status: completed
+      actions:
+        - {type: text, contains: "Я горжусь тобой, мой друг!"}
+        - {type: media, asset: final_police_report, caption: "Финальный полицейский отчет"}

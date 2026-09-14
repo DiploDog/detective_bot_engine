@@ -1,0 +1,130 @@
+name: numeric_pairs_and_safe
+cases:
+  - name: q4_partial
+    initial: {scene: margo_q4}
+    input: {text: "11,20"}
+    expect:
+      outcome: q4_partial
+      scene: margo_q4
+      actions:
+        - {type: text, exact: "Одно из значений верно, но второе – нет. Попробуйте снова."}
+  - name: q6_partial
+    initial: {scene: margo_q6}
+    input: {text: "8,20"}
+    expect:
+      outcome: q6_partial
+      scene: margo_q6
+      actions:
+        - {type: text, exact: "Одно из значений верно, но второе – нет. Попробуйте снова."}
+  - name: q9_partial
+    initial: {scene: margo_q9}
+    input: {text: "31,20"}
+    expect:
+      outcome: q9_partial
+      scene: margo_q9
+      actions:
+        - {type: text, exact: "Одно из значений верно, но второе – нет. Попробуйте снова."}
+
+  - name: empty
+    initial: {scene: margo_q4}
+    input: {text: ""}
+    expect:
+      outcome: q4_invalid
+      input_status: invalid
+      invalid_reason: empty
+      scene: margo_q4_hint
+  - name: duplicate
+    initial: {scene: margo_q4}
+    input: {text: "11,11"}
+    expect:
+      outcome: q4_invalid
+      input_status: invalid
+      invalid_reason: duplicate
+      scene: margo_q4_hint
+  - name: too_few
+    initial: {scene: margo_q4}
+    input: {text: "11"}
+    expect:
+      outcome: q4_invalid
+      input_status: invalid
+      invalid_reason: too_few
+      scene: margo_q4_hint
+  - name: too_many
+    initial: {scene: margo_q4}
+    input: {text: "11,17,20"}
+    expect:
+      outcome: q4_invalid
+      input_status: invalid
+      invalid_reason: too_many
+      scene: margo_q4_hint
+  - name: out_of_range
+    initial: {scene: margo_q4}
+    input: {text: "11,42"}
+    expect:
+      outcome: q4_invalid
+      input_status: invalid
+      invalid_reason: out_of_range
+      scene: margo_q4_hint
+  - name: embedded_digits
+    initial: {scene: margo_q4}
+    input: {text: "11abc17"}
+    expect:
+      outcome: q4_invalid
+      input_status: invalid
+      invalid_reason: syntax
+      scene: margo_q4_hint
+  - name: q2_rejects_extra_number
+    initial: {scene: margo_q2}
+    input: {text: "11,999"}
+    expect:
+      outcome: q2_invalid
+      input_status: invalid
+      invalid_reason: too_many
+      scene: margo_q2_hint
+  - name: q2_rejects_suffix
+    initial: {scene: margo_q2}
+    input: {text: "11,abc"}
+    expect:
+      outcome: q2_invalid
+      input_status: invalid
+      invalid_reason: syntax
+      scene: margo_q2_hint
+
+  - name: comma_separator
+    initial: {scene: margo_q4}
+    input: {text: "11,17"}
+    expect: {outcome: q4_correct, scene: margo_safe}
+  - name: whitespace_separator
+    initial: {scene: margo_q4}
+    input: {text: "11 17"}
+    expect: {outcome: q4_correct, scene: margo_safe}
+  - name: word_and_separator
+    initial: {scene: margo_q4}
+    input: {text: "11 и 17"}
+    expect: {outcome: q4_correct, scene: margo_safe}
+
+  - name: safe_correct
+    initial: {scene: margo_safe}
+    input: {text: "1503"}
+    expect:
+      outcome: safe_correct
+      scene: margo_q5
+      actions:
+        - {type: media, asset: safe_open}
+        - {type: text, contains: "есть еще 2 человека"}
+  - name: safe_wrong_stays
+    initial: {scene: margo_safe}
+    input: {text: "1234"}
+    expect:
+      outcome: safe_wrong
+      scene: margo_safe
+      actions:
+        - {type: text, contains: "Неверный код. Сейф не открывается."}
+  - name: safe_manual_hint
+    initial: {scene: margo_safe}
+    input: {text: "Подсказка"}
+    expect:
+      outcome: safe_hint
+      scene: margo_safe
+      actions:
+        - {type: text, contains: "Может, чей-то день рождения?"}

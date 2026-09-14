@@ -1,0 +1,89 @@
+name: wrong_answers_q1_q9
+cases:
+  - name: q1_wrong
+    initial: {scene: margo_q1}
+    input: {text: "да"}
+    expect:
+      outcome: q1_wrong
+      scene: margo_q1_hint
+      actions:
+        - {type: text, contains: "А ты точно детектив?"}
+        - {type: choices, interaction: hint_q1}
+
+  - name: q2_wrong
+    initial: {scene: margo_q2}
+    input: {text: "12"}
+    expect:
+      outcome: q2_wrong
+      scene: margo_q2_hint
+      actions:
+        - {type: text, contains: "эта улика не относится"}
+        - {type: choices, interaction: hint_q2}
+
+  - name: q3_wrong
+    initial: {scene: margo_q3}
+    input: {text: "виктор"}
+    expect:
+      outcome: q3_wrong
+      scene: margo_q3_hint
+      actions:
+        - {type: text, contains: "кандидат слабоват"}
+        - {type: choices, interaction: hint_q3}
+
+  - name: q4_wrong
+    initial: {scene: margo_q4}
+    input: {text: "1,2"}
+    expect:
+      outcome: q4_wrong
+      scene: margo_q4_hint
+      actions:
+        - {type: text, exact: "Неверно. Давай еще раз."}
+        - {type: choices, interaction: hint_q4}
+
+  - name: q5_wrong
+    initial: {scene: margo_q5}
+    input: {text: "марк, лео"}
+    expect:
+      outcome: q5_wrong
+      scene: margo_q5_hint
+      actions:
+        - {type: text, contains: "проблема в тебе или во мне"}
+        - {type: choices, interaction: hint_q5}
+
+  - name: q6_wrong
+    initial: {scene: margo_q6}
+    input: {text: "1,2"}
+    expect:
+      outcome: q6_wrong
+      scene: margo_q6_hint
+      actions:
+        - {type: text, exact: "Неверно. Давай еще раз."}
+        - {type: choices, interaction: hint_q6}
+
+  - name: q7_wrong
+    initial: {scene: margo_q7}
+    input: {text: "клэр"}
+    expect:
+      outcome: q7_wrong
+      scene: margo_q7_hint
+      actions:
+        - {type: text, exact: "Не думаю, поищи ответ тщательнее."}
+        - {type: choices, interaction: hint_q7}
+
+  - name: q8_wrong_without_hint
+    initial: {scene: margo_q8}
+    input: {text: "да"}
+    expect:
+      outcome: q8_wrong
+      scene: margo_q8
+      actions:
+        - {type: text, exact: "Проверь еще раз возможность Оливии совершения убийства."}
+
+  - name: q9_wrong_without_hint
+    initial: {scene: margo_q9}
+    input: {text: "1,2"}
+    expect:
+      outcome: q9_wrong
+      scene: margo_q9
+      actions:
+        - {type: text, exact: "Неверно. Попробуй еще раз."}

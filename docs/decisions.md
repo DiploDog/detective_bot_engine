@@ -100,11 +100,15 @@
 
 ## ADR-013: async VK через проверяемый adapter
 
-**Статус:** предложено, требуется POC.
+**Статус:** принято. Transport — VKBottle 4.11.
 
-**Решение:** основной кандидат — VKBottle 4.x с Group Long Poll и async API. Fallback — небольшой adapter на `aiohttp` и официальном VK Group Long Poll.
+**Решение:** Group Long Poll, callback `MESSAGE_EVENT`, photo/document upload и
+async shutdown/reconnect закрываются VKBottle 4.x. Fallback на `aiohttp` + official
+VK API не потребовался. Live group POC в automated suite отсутствует: подтверждены
+публичные API библиотеки и isolated unit surface без реального VK token.
 
-**Следствие:** legacy sync `vk_api` не определяет target. До выбора dependency необходимо проверить актуальную версию, callback events, uploads, reconnect и целевую Python version.
+**Следствие:** legacy sync `vk_api` не используется. Один async process
+`python -m detective_bot.entrypoints.vk`.
 
 ## ADR-014: legacy intent сохраняется, очевидные дефекты — нет
 

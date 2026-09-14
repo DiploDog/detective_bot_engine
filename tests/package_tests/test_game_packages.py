@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +10,7 @@ import yaml
 
 from detective_bot.engine.model import (
     ChoiceInput,
+    ChoicesAction,
     InputStatus,
     MediaAction,
     SessionSnapshot,
@@ -48,6 +49,19 @@ def discover_package_cases() -> tuple[PackageCase, ...]:
                     name=suite_name,
                     initial=document.get("initial", {}),
                     steps=tuple(document["steps"]),
+                )
+            )
+        for index, scenario in enumerate(document.get("scenarios", [])):
+            discovered.append(
+                PackageCase(
+                    package_root=package_root,
+                    source=source,
+                    name=scenario.get(
+                        "name",
+                        f"{suite_name}_scenario_{index + 1}",
+                    ),
+                    initial=scenario.get("initial", {}),
+                    steps=tuple(scenario["steps"]),
                 )
             )
         for index, case in enumerate(document.get("cases", [])):
@@ -154,3 +168,25 @@ def _assert_result(result: Any, expected: dict[str, Any]) -> None:
                     assert action_expected["contains"] in actual.text
             if isinstance(actual, MediaAction) and "asset" in action_expected:
                 assert actual.asset == action_expected["asset"]
+            if isinstance(actual, MediaAction) and "caption" in action_expected:
+                assert actual.caption == action_expected["caption"]
+            if isinstance(actual, ChoicesAction):
+                if "interaction" in action_expected:
+                    assert actual.interaction == action_expected["interaction"]
+                if "values" in action_expected:
+                    assert [option.value for option in actual.options] == (
+                        action_expected["values"]
+                    )
+    if "scheduled" in expected:
+        assert len(result.scheduled) == len(expected["scheduled"])
+        for actual, scheduled_expected in zip(
+            result.scheduled,
+            expected["scheduled"],
+            strict=True,
+        ):
+            assert actual.template_id == scheduled_expected["action"]
+            assert actual.idempotency_key == scheduled_expected["idempotency_key"]
+            if "due_in_seconds" in scheduled_expected:
+                assert actual.due_at == NOW + timedelta(
+                    seconds=scheduled_expected["due_in_seconds"]
+                )

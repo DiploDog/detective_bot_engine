@@ -1,0 +1,838 @@
+schema_version: 1
+entry_scene: margo_q1_initial
+variables: {}
+
+scheduled_actions:
+  reveal_articles:
+    guard:
+      session_status: in_progress
+      current_scene: margo_articles
+    actions:
+      - type: text
+        text: "Кстати, чуть не забыл! У меня же есть для тебя еще одна улика! Я нашел распечатку истории посещений веб-страниц с ноутбука Елены Миллер за период с 10 по 14 октября 2023 г. История восстановлена цифровыми криминалистами, и я готов ею с тобой поделиться."
+      - type: choices
+        interaction: read_article
+        text: |-
+          Я нашел распечатку истории посещений веб-страниц с ноутбука Елены Миллер за период с 10 по 14 октября 2023 г. История восстановлена цифровыми криминалистами.
+
+          Устройство: MacBook Air пользователя «Elena»
+          Период: 10.10.2023 — 14.10.2023
+        options:
+          - value: 1
+            label: "1. частные клиники лечение игровой зависимости Спрингфилд отзывы"
+          - value: 2
+            label: "2. раздел имущества при разводе без брачного договора иллинойс"
+          - value: 3
+            label: "3. причины развода смерть супруга иллинойс"
+          - value: 4
+            label: "4. домашнее насилие статистика сша"
+          - value: 5
+            label: "5. доказательство домогательств на работе запись разговора"
+          - value: 6
+            label: "6. Jacob Adams Oakville 2016 приговор"
+          - value: 7
+            label: "7. условно-досрочное освобождение Иллинойс условия"
+          - value: 8
+            label: "8. рецепт домашней пиццы пепперони"
+          - value: 9
+            label: "9. прогноз матча Springfield FC Chicago Fire"
+          - value: 10
+            label: "10. подлинность рецептурного бланка водяные знаки"
+          - value: 11
+            label: "11. отслеживание заказа пиццы Cheesus Crust"
+
+scenes:
+  margo_q1_initial:
+    on_enter:
+      - type: text
+        text: "Привет! Меня зовут Том Митчел. Я веду дело об убийстве Елены Миллер. Улик и подозреваемых больше, чем мне бы хотелось. Поэтому мне определенно нужна будет твоя помощь. Но прежде, чем показать тебе все секретные материалы дела, я должен убедиться, что ты настоящий сыщик. Изучи первый пакет улик и ответь на мой вопрос: Человек, который наследил ботинками на полу в доме жертвы, и есть убийца?"
+    interactions:
+      - id: answer_q1_initial
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace]
+        outcomes:
+          - id: q1_initial_correct
+            when:
+              match:
+                strategy: aliases
+                values: ["нет", "не"]
+            actions:
+              - type: text
+                text: "Супер!"
+            transition:
+              goto: margo_q2
+          - id: q1_initial_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "А ты точно детектив? Прочитай улики еще раз и попробуй другой вариант ответа."
+            transition:
+              goto: margo_q1_hint
+
+  margo_q1:
+    on_enter:
+      - type: text
+        text: "Человек, который наследил ботинками на полу в доме жертвы, и есть убийца?"
+    interactions:
+      - id: answer_q1
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace]
+        outcomes:
+          - id: q1_correct
+            when:
+              match:
+                strategy: aliases
+                values: ["нет", "не"]
+            actions:
+              - type: text
+                text: "Супер!"
+            transition:
+              goto: margo_q2
+          - id: q1_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "А ты точно детектив? Прочитай улики еще раз и попробуй другой вариант ответа."
+            transition:
+              goto: margo_q1_hint
+
+  margo_q1_hint:
+    on_enter:
+      - type: choices
+        interaction: hint_q1
+        text: "Друг, тебе нужна подсказка?"
+    interactions:
+      - id: hint_q1
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes": {label: "Да", text_aliases: ["да"]}
+            "no": {label: "Нет", text_aliases: ["нет"]}
+        outcomes:
+          - id: q1_accept_hint
+            when: {choice: "yes"}
+            actions:
+              - type: text
+                text: "Кажется, ты невнимательно ознакомился с судмедэкспертизой. Попробуй поискать там."
+            transition: {goto: margo_q1}
+          - id: q1_decline_hint
+            when: {choice: "no"}
+            actions:
+              - type: text
+                text: "Хорошо, попробуй ответить на вопрос еще раз."
+            transition: {goto: margo_q1}
+
+  margo_q2:
+    on_enter:
+      - type: text
+        text: "Какая улика на это указывает? Напиши номер улики из списка улик по делу."
+    interactions:
+      - id: evidence_q2
+        input:
+          type: numeric_selection
+          separators: [comma, whitespace, word_and]
+          unique: true
+          min_items: 1
+          max_items: 1
+          allowed_values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+        outcomes:
+          - id: q2_invalid
+            when: invalid
+            actions:
+              - type: text
+                text: "Хм... по-моему, эта улика не относится к теме разговора. Может, тебе приходит на ум что-то еще?"
+            transition: {goto: margo_q2_hint}
+          - id: q2_correct
+            when: {selection: {equals: [11]}}
+            actions:
+              - type: text
+                text: "Совершенно верно! Именно судмедэксперт подтверждает, что следы были оставлены уже после 22:00 (когда начался дождь), а значит, кто-то был у Елены после ее смерти, но скрывает это."
+            transition: {goto: margo_q3}
+          - id: q2_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Хм... по-моему, эта улика не относится к теме разговора. Может, тебе приходит на ум что-то еще?"
+            transition: {goto: margo_q2_hint}
+
+  margo_q2_hint:
+    on_enter:
+      - type: choices
+        interaction: hint_q2
+        text: "Друг, тебе нужна подсказка?"
+    interactions:
+      - id: hint_q2
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes": {label: "Да", text_aliases: ["да"]}
+            "no": {label: "Нет", text_aliases: ["нет"]}
+        outcomes:
+          - id: q2_accept_hint
+            when: {choice: "yes"}
+            actions:
+              - type: text
+                text: "Кажется, ты невнимательно ознакомился с судмедэкспертизой. Попробуй поискать там."
+            transition: {goto: margo_q2}
+          - id: q2_decline_hint
+            when: {choice: "no"}
+            actions:
+              - type: text
+                text: "Хорошо, попробуй ответить на вопрос еще раз."
+            transition: {goto: margo_q2}
+
+  margo_q3:
+    on_enter:
+      - type: text
+        text: "Ты уже должен был догадаться, кто это. Напиши мне имя этого человека."
+    interactions:
+      - id: answer_q3
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace]
+        outcomes:
+          - id: q3_correct
+            when:
+              match:
+                strategy: aliases
+                values: ["лео", "лео миллер", "брат елены", "еленин брат"]
+            actions:
+              - type: text
+                text: "Твои дедуктивные способности поразительны!"
+            transition: {goto: margo_q4}
+          - id: q3_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Что натолкнуло тебя на эту мысль? Как по мне, кандидат слабоват. Кто еще у тебя на примете?"
+            transition: {goto: margo_q3_hint}
+
+  margo_q3_hint:
+    on_enter:
+      - type: choices
+        interaction: hint_q3
+        text: "Друг, тебе нужна подсказка?"
+    interactions:
+      - id: hint_q3
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes": {label: "Да", text_aliases: ["да"]}
+            "no": {label: "Нет", text_aliases: ["нет"]}
+        outcomes:
+          - id: q3_accept_hint
+            when: {choice: "yes"}
+            actions:
+              - type: text
+                text: "Кажется, только этот человек носил такой размер обуви."
+            transition: {goto: margo_q3}
+          - id: q3_decline_hint
+            when: {choice: "no"}
+            actions:
+              - type: text
+                text: "Хорошо, попробуй ответить на вопрос еще раз."
+            transition: {goto: margo_q3}
+
+  margo_q4:
+    on_enter:
+      - type: text
+        text: "Какие 2 улики это доказывают? Напиши номера улик из списка улик по делу через запятую."
+    interactions:
+      - id: evidence_q4
+        input:
+          type: numeric_selection
+          separators: [comma, whitespace, word_and]
+          unique: true
+          min_items: 2
+          max_items: 2
+          allowed_values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+        outcomes:
+          - id: q4_invalid
+            when: invalid
+            actions:
+              - type: text
+                text: "Неверно. Давай еще раз."
+            transition: {goto: margo_q4_hint}
+          - id: q4_correct
+            when: {selection: {equals: [11, 17]}}
+            actions:
+              - type: text
+                text: "Отлично! Наконец-то мы разобрались с братом жертвы."
+            transition: {goto: margo_safe}
+          - id: q4_partial
+            when:
+              selection:
+                intersection_with: [11, 17]
+                intersection_size: 1
+            actions:
+              - type: text
+                text: "Одно из значений верно, но второе – нет. Попробуйте снова."
+            transition: stay
+          - id: q4_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Неверно. Давай еще раз."
+            transition: {goto: margo_q4_hint}
+
+  margo_q4_hint:
+    on_enter:
+      - type: choices
+        interaction: hint_q4
+        text: "Друг, тебе нужна подсказка?"
+    interactions:
+      - id: hint_q4
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes": {label: "Да", text_aliases: ["да"]}
+            "no": {label: "Нет", text_aliases: ["нет"]}
+        outcomes:
+          - id: q4_accept_hint
+            when: {choice: "yes"}
+            actions:
+              - type: text
+                text: "Посмотри, кому принадлежит 45 размер обуви."
+            transition: {goto: margo_q4}
+          - id: q4_decline_hint
+            when: {choice: "no"}
+            actions:
+              - type: text
+                text: "Хорошо, попробуй ответить на вопрос еще раз."
+            transition: {goto: margo_q4}
+
+  margo_safe:
+    on_enter:
+      - type: media
+        asset: safe_closed
+        caption: |-
+          Вы находите в спальне Елены старый металлический сейф. На дисплее мигает запрос на 4 цифры. Елена была человеком привычки и часто использовала в качестве паролей личные даты.
+
+          Введите код, чтобы открыть сейф:
+    interactions:
+      - id: safe_code
+        input:
+          type: text
+          normalize: [trim, lowercase]
+        outcomes:
+          - id: safe_correct
+            when:
+              match:
+                strategy: exact
+                value: "1503"
+            actions:
+              - type: media
+                asset: safe_open
+                caption: |-
+                  Щелчок! Сейф открыт.
+
+                  Внутри вы находите несколько туго набитых пачек долларов и стопку рецептурных бланков с подозрительными подписями.
+            transition: {goto: margo_q5}
+          - id: safe_hint
+            when:
+              match:
+                strategy: exact
+                value: "подсказка"
+            actions:
+              - type: text
+                text: "Елена не стала бы выдумывать сложный код. Она выбрала бы что-то, что всегда помнит, даже в стрессовой ситуации. Может, чей-то день рождения?"
+            transition: stay
+          - id: safe_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Неверный код. Сейф не открывается. Попробуйте ещё раз. Если нужна подсказка, напишите «Подсказка»."
+            transition: stay
+
+  margo_q5:
+    on_enter:
+      - type: text
+        text: "Но если ты заметил, есть еще 2 человека, кто врет в своих допросах. Знаешь их имена? Напиши их через запятую."
+    interactions:
+      - id: answer_q5
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace]
+        outcomes:
+          - id: q5_correct
+            when:
+              match:
+                strategy: aliases
+                values:
+                  - "виктор, джулиан"
+                  - "джулиан, виктор"
+                  - "виктор браун, джулиан эванс"
+                  - "джулиан эванс, виктор браун"
+                  - "виктор и джулиан"
+                  - "джулиан и виктор"
+                  - "виктор браун и джулиан эванс"
+                  - "джулиан эванс и виктор браун"
+            actions:
+              - type: text
+                text: "Да ты чертов гений!"
+            transition: {goto: margo_q6}
+          - id: q5_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Чувак, проблема в тебе или во мне? Давай по новой."
+            transition: {goto: margo_q5_hint}
+
+  margo_q5_hint:
+    on_enter:
+      - type: choices
+        interaction: hint_q5
+        text: "Друг, тебе нужна подсказка?"
+    interactions:
+      - id: hint_q5
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes": {label: "Да", text_aliases: ["да"]}
+            "no": {label: "Нет", text_aliases: ["нет"]}
+        outcomes:
+          - id: q5_accept_hint
+            when: {choice: "yes"}
+            actions:
+              - type: text
+                text: "Лео мы уже проверили, про Марка, Клэр, Стива и Сару знаем пока очень мало. Однако двое мужчин из списка допрошенных все-таки соврали. Один из них скрывает мотив, второй возможность совершения преступления."
+            transition: {goto: margo_q5}
+          - id: q5_decline_hint
+            when: {choice: "no"}
+            actions:
+              - type: text
+                text: "Хорошо, попробуй ответить на вопрос еще раз."
+            transition: {goto: margo_q5}
+
+  margo_q6:
+    on_enter:
+      - type: text
+        text: "Сможешь указать 2 улики, которые это подтверждают? Напиши номера улик из списка улик по делу через запятую."
+    interactions:
+      - id: evidence_q6
+        input:
+          type: numeric_selection
+          separators: [comma, whitespace, word_and]
+          unique: true
+          min_items: 2
+          max_items: 2
+          allowed_values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+        outcomes:
+          - id: q6_invalid
+            when: invalid
+            actions:
+              - type: text
+                text: "Неверно. Давай еще раз."
+            transition: {goto: margo_q6_hint}
+          - id: q6_correct
+            when: {selection: {equals: [8, 16]}}
+            actions:
+              - type: text
+                text: "Не перестаю тебе удивляться. Верно!"
+            transition: {goto: margo_q7}
+          - id: q6_partial
+            when:
+              selection:
+                intersection_with: [8, 16]
+                intersection_size: 1
+            actions:
+              - type: text
+                text: "Одно из значений верно, но второе – нет. Попробуйте снова."
+            transition: stay
+          - id: q6_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Неверно. Давай еще раз."
+            transition: {goto: margo_q6_hint}
+
+  margo_q6_hint:
+    on_enter:
+      - type: choices
+        interaction: hint_q6
+        text: "Друг, тебе нужна подсказка?"
+    interactions:
+      - id: hint_q6
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes": {label: "Да", text_aliases: ["да"]}
+            "no": {label: "Нет", text_aliases: ["нет"]}
+        outcomes:
+          - id: q6_accept_hint
+            when: {choice: "yes"}
+            actions:
+              - type: text
+                text: "Это парковочный талон Джулиана, а также переписка Елены и Виктора, которая говорит нам о том, что Виктор и Елена явно были в плохих отношениях."
+            transition: {goto: margo_q6}
+          - id: q6_decline_hint
+            when: {choice: "no"}
+            actions:
+              - type: text
+                text: "Хорошо, попробуй ответить на вопрос еще раз."
+            transition: {goto: margo_q6}
+
+  margo_q7:
+    on_enter:
+      - type: text
+        text: "Ну что ж. Пришло время вскрывать следующий конверт! И вот мой новый вопрос для тебя: Тебе уже известно, кому принадлежит ник «аптека» в телефоне жертвы? Напиши имя этого человека."
+    interactions:
+      - id: answer_q7
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace]
+        outcomes:
+          - id: q7_correct
+            when:
+              match:
+                strategy: aliases
+                values: ["оливия", "оливия коллинз", "соседка елены", "оливие", "оливии", "соседке елены", "оливии коллинз", "оливие коллинз", "соседке"]
+            actions:
+              - type: text
+                text: "Верно. Ты мог заметить, что на истории из Телеграма под ником «Аптека» мы видим Оливию и ее мужа, а потому сделал вывод, что «Аптека» и есть Оливия. Елена и Оливия явно говорят о каких-то незаконных финансовых операциях."
+            transition: {goto: margo_q8}
+          - id: q7_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Не думаю, поищи ответ тщательнее."
+            transition: {goto: margo_q7_hint}
+
+  margo_q7_hint:
+    on_enter:
+      - type: choices
+        interaction: hint_q7
+        text: "Друг, тебе нужна подсказка?"
+    interactions:
+      - id: hint_q7
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes": {label: "Да", text_aliases: ["да"]}
+            "no": {label: "Нет", text_aliases: ["нет"]}
+        outcomes:
+          - id: q7_accept_hint
+            when: {choice: "yes"}
+            actions:
+              - type: text
+                text: "Пришло время сопоставить истории с никами из Телеграма Елены."
+            transition: {goto: margo_q7}
+          - id: q7_decline_hint
+            when: {choice: "no"}
+            actions:
+              - type: text
+                text: "Хорошо, попробуй ответить на вопрос еще раз."
+            transition: {goto: margo_q7}
+
+  margo_q8:
+    on_enter:
+      - type: text
+        text: "Могла ли Оливия убить Елену?"
+    interactions:
+      - id: answer_q8
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace]
+        outcomes:
+          - id: q8_correct
+            when:
+              match:
+                strategy: aliases
+                values: ["нет", "не"]
+            actions:
+              - type: text
+                text: "Верно, ты, наверное, понял, почему?"
+            transition: {goto: margo_q9}
+          - id: q8_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Проверь еще раз возможность Оливии совершения убийства."
+            transition: stay
+
+  margo_q9:
+    on_enter:
+      - type: text
+        text: "Какие 2 улики помогли тебе понять, что Оливия не могла убить Елену? Напиши номера улик из списка улик по делу через запятую."
+    interactions:
+      - id: evidence_q9
+        input:
+          type: numeric_selection
+          separators: [comma, whitespace, word_and]
+          unique: true
+          min_items: 2
+          max_items: 2
+          allowed_values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+        outcomes:
+          - id: q9_invalid
+            when: invalid
+            actions:
+              - type: text
+                text: "Неверно. Попробуй еще раз."
+            transition: stay
+          - id: q9_correct
+            when: {selection: {equals: [31, 33]}}
+            actions:
+              - type: text
+                text: "ты прав"
+              - type: text
+                text: "Вот мы и на финишной прямой. Открывай последний конверт с уликами. Кстати, сразу присылаю тебе одну из них сюда."
+              - type: media
+                asset: phone_recording
+            effects:
+              - type: schedule
+                action: reveal_articles
+                delay_seconds: 300
+                idempotency_key: reveal_articles
+            transition: {goto: margo_articles}
+          - id: q9_partial
+            when:
+              selection:
+                intersection_with: [31, 33]
+                intersection_size: 1
+            actions:
+              - type: text
+                text: "Одно из значений верно, но второе – нет. Попробуйте снова."
+            transition: stay
+          - id: q9_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Неверно. Попробуй еще раз."
+            transition: stay
+
+  margo_articles:
+    interactions:
+      - id: ready_to_name_killer
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace]
+        outcomes:
+          - id: ready_for_killer
+            when:
+              match:
+                strategy: exact
+                value: "готов назвать убийцу"
+            transition: {goto: margo_killer}
+      - id: read_article
+        input:
+          type: numeric_selection
+          separators: [comma, whitespace, word_and]
+          unique: true
+          min_items: 1
+          max_items: 1
+          allowed_values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        outcomes:
+          - id: article_1
+            when: {selection: {equals: [1]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 10.10.2023, 22:15
+                  Запрос: «частные клиники лечение игровой зависимости Спрингфилд отзывы»
+                  Заголовок страницы: «Топ-5 частных клиник для лечения лудомании в Спрингфилде: сравнение программ и цен»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «Клиника «Рехаб Центр» предлагает одну из самых строгих программ изоляции с полным запретом на доступ к деньгам и гаджетам. Стоимость 28-дневного курса начинается от $15 000. По словам бывших пациентов, программа эффективна, но требует полного согласия больного, иначе возможны срывы сразу после выписки.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_2
+            when: {selection: {equals: [2]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 11.10.2023, 09:40
+                  Запрос: «раздел имущества при разводе без брачного договора иллинойс»
+                  Заголовок страницы: «Как делится имущество при разводе в Иллинойсе: права супругов и типичные ошибки»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «Страховые полисы, приобретенные в браке, считаются совместной собственностью. В случае смерти одного из супругов второй, как выгодоприобретатель, имеет право на выплату даже при подаче на развод, если полис не был переоформлен. Суды штата часто расценивают это как существенный актив при разделе.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_3
+            when: {selection: {equals: [3]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 12.10.2023, 10:30
+                  Запрос: «причины развода смерть супруга иллинойс»
+                  Заголовок страницы: «Развод и смерть супруга: как это влияет на имущество и страховые выплаты?»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «Если во время бракоразводного процесса один из супругов умирает, дело о разводе прекращается, и вступают в силу правила наследования. Особенно сложны случаи, когда смерть наступила в результате несчастного случая или насилия. По статистике, около 5% разводов в Иллинойсе связаны с последующей гибелью одного из супругов в течение года.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_4
+            when: {selection: {equals: [4]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 12.10.2023, 11:45
+                  Запрос: «домашнее насилие статистика сша»
+                  Заголовок страницы: «Статистика домашнего насилия в США: цифры и резонансные дела»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «По данным Национальной коалиции против домашнего насилия, ежегодно в США от рук интимных партнеров погибает около 1500 женщин. Однако не менее трагичны случаи, когда жертвами становятся и мужчины. Одно из громких дел последних лет — процесс над Джейкобом Адамсом, который в 2016 году был осужден за убийство своего соседа по квартире во время бытовой ссоры. Это дело привлекло внимание общественности к проблеме неконтролируемой агрессии в семейных конфликтах. После освобождения Адамс сменил имя и, предположительно, переехал в другой штат.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_5
+            when: {selection: {equals: [5]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 12.10.2023, 20:17
+                  Запрос: «что считается доказательством домогательств на работе запись разговора»
+                  Заголовок страницы: «Тайная запись разговора как доказательство харассмента: законность и сила в суде»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «В штате Иллинойс разрешена односторонняя аудиозапись разговора. Такое доказательство является допустимым в суде и часто становится решающим, особенно если на записи четко слышно «услуга за услугу» — предложение каких-либо преимуществ в обмен на личные услуги.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_6
+            when: {selection: {equals: [6]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 13.10.2023, 11:05
+                  Запрос: «Jacob Adams Oakville 2016 приговор»
+                  Заголовок страницы: «Приговор по делу Джейкоба Адамса: 7 лет за непредумышленное убийство в состоянии аффекта»
+                  СОДЕРЖАНИЕ СТАТЬИ:
+                  «...Суд города Оквилл вынес приговор 28-летнему Джейкобу Адамсу. Подсудимый был признан виновным в непредумышленном убийстве своего соседа по квартире, 30-летнего Карлоса Риверы, во время бытовой ссоры в апреле 2015 года. Как установило следствие, конфликт начался из-за денежного долга и перерос в драку, в ходе которой Адамс нанёс Ривере несколько ударов кухонным ножом. Защита настаивала на самообороне и состоянии сильного душевного волнения. Суд принял во внимание чистую до этого репутацию подсудимого, его раскаяние и то, что он немедленно вызвал полицию, но отметил чрезмерную жестокость и применение ножа. Джейкоб Адамс приговорён к 7 годам лишения свободы с правом на условно-досрочное освобождение после отбытия двух третей срока...»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_7
+            when: {selection: {equals: [7]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 13.10.2023, 11:20
+                  Запрос: «условно-досрочное освобождение Иллинойс условия»
+                  Заголовок страницы: «Комиссия по условно-досрочному освобождению: процедура и критерии»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «Лица, осужденные за насильственные преступления, такие как непредумышленные, могут претендовать на условно-досрочное освобождение после отбытия не менее 2/3 срока при образцовом поведении, признании вины и наличии утвержденного плана реинтеграции, включая место жительства и работу.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_8
+            when: {selection: {equals: [8]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 13.10.2023, 19:30
+                  Запрос: «рецепт домашней пиццы пепперони с тонким тестом»
+                  Заголовок страницы: «Идеальная домашняя пицца с пепперони: пошаговый рецепт»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «Секрет хрустящего тонкого теста — в высокотемпературной выпечке (минимум 250°C) и минимальном количестве начинки. Раскатайте тесто как можно тоньше, смажьте томатным соусом с орегано, выложите пепперони и обильно посыпьте тертой моцареллой. Выпекайте 10-12 минут до золотистого края.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_9
+            when: {selection: {equals: [9]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 14.10.2023, 15:10
+                  Запрос: «Springfield FC Chicago Fire прогноз ставки»
+                  Заголовок страницы: «Прогноз на матч MLS: Springfield FC против Chicago Fire. Кого брать в ставках?»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «Несмотря на статус явного аутсайдера (коэф. на победу 2.10), Springfield FC может преподнести сюрприз на домашнем поле. Матч начнется в 19:00 и, вероятно, будет богат на голевые моменты во втором тайме. Букмекеры советуют осторожность, но ставка на тотал больше 2.5 выглядит оправданной.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_10
+            when: {selection: {equals: [10]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 14.10.2023, 16:55
+                  Запрос: «как проверить подлинность рецептурного бланка водяные знаки»
+                  Заголовок страницы: «Руководство для фармацевтов: 5 уровней защиты официальных рецептурных бланков»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «Наиболее надежный способ отличить подделку — проверить бланк под ультрафиолетом: оригинал должен иметь скрытые UV-метки с логотипом штата. Также обратите внимание на микрошрифт в нижнем углу и тактильные ощущения от бумаги — оригинальная имеет легкую шероховатость.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+          - id: article_11
+            when: {selection: {equals: [11]}}
+            actions:
+              - type: text
+                text: |-
+                  Дата и время: 14.10.2023, 18:40 (ПОСЛЕДНЯЯ ЗАПИСЬ)
+                  Запрос: «номер доставки пиццы Cheesus Crust спрингфилд»
+                  Заголовок страницы: «Cheesus Crust — отслеживание заказа»
+                  СОДЕРЖАНИЕ СТАТЬИ (выдержка):
+                  «Для отслеживания статуса вашего заказа введите его номер в поле ниже. Среднее время доставки в районе Maple Street составляет 30-40 минут в вечернее время.»
+              - type: text
+                text: 'Интересненько, не так ли? Изучи все статьи, и как только будешь готов, напиши "Готов назвать убийцу" в чат.'
+            transition: stay
+    fallback:
+      actions:
+        - type: text
+          text: "Изучи все статьи и напиши 'Готов назвать убийцу', когда будешь готов."
+      transition: stay
+
+  margo_killer:
+    on_enter:
+      - type: text
+        text: "Я в предвкушении! Итак, удиви меня!"
+    interactions:
+      - id: answer_killer
+        input:
+          type: text
+          normalize: [trim, lowercase, collapse_whitespace, replace_yo]
+        outcomes:
+          - id: killer_correct
+            when:
+              match:
+                strategy: aliases
+                values: ["марк", "марк дэвис", "марк девис", "джейкоб адамс", "джейкоб", "адамс"]
+            actions:
+              - type: text
+                text: "Я горжусь тобой, мой друг! Ты идеально справился с этим преступлением и вычислил убийцу. Если тебе интересно узнать историю целиком, то я вышлю тебе отчет полиции по этому делу. Там ты найдешь все детали по делу."
+              - type: media
+                asset: final_police_report
+                caption: "Финальный полицейский отчет"
+            transition: complete
+          - id: killer_wrong
+            when: otherwise
+            actions:
+              - type: text
+                text: "Кажется, ты планируешь посадить невиновного?"
+            transition: {goto: margo_killer_hint}
+
+  margo_killer_hint:
+    on_enter:
+      - type: choices
+        interaction: hint_killer
+        text: "Друг, тебе нужна подсказка?"
+    interactions:
+      - id: hint_killer
+        input:
+          type: choice
+          normalize: [trim, lowercase]
+          options:
+            "yes": {label: "Да", text_aliases: ["да"]}
+            "no": {label: "Нет", text_aliases: ["нет"]}
+        outcomes:
+          - id: killer_accept_hint
+            when: {choice: "yes"}
+            actions:
+              - type: text
+                text: "Один человек из подозреваемых был у Елены во время убийства. Из допроса Джулиана и Саймона мы делаем вывод, что это был мужчина. У кого из мужчин нет алиби на время преступления?"
+            transition: {goto: margo_killer}
+          - id: killer_decline_hint
+            when: {choice: "no"}
+            actions:
+              - type: text
+                text: "Хорошо, попробуй ответить на вопрос еще раз."
+            transition: {goto: margo_killer}

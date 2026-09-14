@@ -1,0 +1,201 @@
+name: all_hint_flows
+scenarios:
+  - name: q1_hint_yes
+    initial: {scene: margo_q1}
+    steps:
+      - input: {text: "да"}
+        expect: {outcome: q1_wrong, scene: margo_q1_hint}
+      - input: {choice: {interaction: hint_q1, value: "yes"}}
+        expect:
+          outcome: q1_accept_hint
+          scene: margo_q1
+          actions:
+            - {type: text, exact: "Кажется, ты невнимательно ознакомился с судмедэкспертизой. Попробуй поискать там."}
+            - {type: text, contains: "наследил ботинками"}
+  - name: q1_hint_no
+    initial: {scene: margo_q1}
+    steps:
+      - input: {text: "да"}
+        expect: {scene: margo_q1_hint}
+      - input: {choice: {interaction: hint_q1, value: "no"}}
+        expect:
+          outcome: q1_decline_hint
+          scene: margo_q1
+          actions:
+            - {type: text, exact: "Хорошо, попробуй ответить на вопрос еще раз."}
+            - {type: text, contains: "наследил ботинками"}
+
+  - name: q2_hint_yes
+    initial: {scene: margo_q2}
+    steps:
+      - input: {text: "12"}
+        expect: {scene: margo_q2_hint}
+      - input: {choice: {interaction: hint_q2, value: "yes"}}
+        expect:
+          outcome: q2_accept_hint
+          scene: margo_q2
+          actions:
+            - {type: text, contains: "судмедэкспертизой"}
+            - {type: text, contains: "Какая улика"}
+  - name: q2_hint_no
+    initial: {scene: margo_q2}
+    steps:
+      - input: {text: "12"}
+        expect: {scene: margo_q2_hint}
+      - input: {choice: {interaction: hint_q2, value: "no"}}
+        expect:
+          outcome: q2_decline_hint
+          scene: margo_q2
+          actions:
+            - {type: text, exact: "Хорошо, попробуй ответить на вопрос еще раз."}
+            - {type: text, contains: "Какая улика"}
+
+  - name: q3_hint_yes
+    initial: {scene: margo_q3}
+    steps:
+      - input: {text: "виктор"}
+        expect: {scene: margo_q3_hint}
+      - input: {choice: {interaction: hint_q3, value: "yes"}}
+        expect:
+          outcome: q3_accept_hint
+          scene: margo_q3
+          actions:
+            - {type: text, exact: "Кажется, только этот человек носил такой размер обуви."}
+            - {type: text, contains: "Напиши мне имя"}
+  - name: q3_hint_no
+    initial: {scene: margo_q3}
+    steps:
+      - input: {text: "виктор"}
+        expect: {scene: margo_q3_hint}
+      - input: {choice: {interaction: hint_q3, value: "no"}}
+        expect:
+          outcome: q3_decline_hint
+          scene: margo_q3
+          actions:
+            - {type: text, exact: "Хорошо, попробуй ответить на вопрос еще раз."}
+            - {type: text, contains: "Напиши мне имя"}
+
+  - name: q4_hint_yes
+    initial: {scene: margo_q4}
+    steps:
+      - input: {text: "1,2"}
+        expect: {scene: margo_q4_hint}
+      - input: {choice: {interaction: hint_q4, value: "yes"}}
+        expect:
+          outcome: q4_accept_hint
+          scene: margo_q4
+          actions:
+            - {type: text, exact: "Посмотри, кому принадлежит 45 размер обуви."}
+            - {type: text, contains: "Какие 2 улики"}
+  - name: q4_hint_no
+    initial: {scene: margo_q4}
+    steps:
+      - input: {text: "1,2"}
+        expect: {scene: margo_q4_hint}
+      - input: {choice: {interaction: hint_q4, value: "no"}}
+        expect:
+          outcome: q4_decline_hint
+          scene: margo_q4
+          actions:
+            - {type: text, exact: "Хорошо, попробуй ответить на вопрос еще раз."}
+            - {type: text, contains: "Какие 2 улики"}
+
+  - name: q5_hint_yes
+    initial: {scene: margo_q5}
+    steps:
+      - input: {text: "марк, лео"}
+        expect: {scene: margo_q5_hint}
+      - input: {choice: {interaction: hint_q5, value: "yes"}}
+        expect:
+          outcome: q5_accept_hint
+          scene: margo_q5
+          actions:
+            - {type: text, contains: "Один из них скрывает мотив"}
+            - {type: text, contains: "есть еще 2 человека"}
+  - name: q5_hint_no
+    initial: {scene: margo_q5}
+    steps:
+      - input: {text: "марк, лео"}
+        expect: {scene: margo_q5_hint}
+      - input: {choice: {interaction: hint_q5, value: "no"}}
+        expect:
+          outcome: q5_decline_hint
+          scene: margo_q5
+          actions:
+            - {type: text, exact: "Хорошо, попробуй ответить на вопрос еще раз."}
+            - {type: text, contains: "есть еще 2 человека"}
+
+  - name: q6_hint_yes
+    initial: {scene: margo_q6}
+    steps:
+      - input: {text: "1,2"}
+        expect: {scene: margo_q6_hint}
+      - input: {choice: {interaction: hint_q6, value: "yes"}}
+        expect:
+          outcome: q6_accept_hint
+          scene: margo_q6
+          actions:
+            - {type: text, contains: "парковочный талон Джулиана"}
+            - {type: text, contains: "Сможешь указать 2 улики"}
+  - name: q6_hint_no
+    initial: {scene: margo_q6}
+    steps:
+      - input: {text: "1,2"}
+        expect: {scene: margo_q6_hint}
+      - input: {choice: {interaction: hint_q6, value: "no"}}
+        expect:
+          outcome: q6_decline_hint
+          scene: margo_q6
+          actions:
+            - {type: text, exact: "Хорошо, попробуй ответить на вопрос еще раз."}
+            - {type: text, contains: "Сможешь указать 2 улики"}
+
+  - name: q7_hint_yes
+    initial: {scene: margo_q7}
+    steps:
+      - input: {text: "клэр"}
+        expect: {scene: margo_q7_hint}
+      - input: {choice: {interaction: hint_q7, value: "yes"}}
+        expect:
+          outcome: q7_accept_hint
+          scene: margo_q7
+          actions:
+            - {type: text, exact: "Пришло время сопоставить истории с никами из Телеграма Елены."}
+            - {type: text, contains: "кому принадлежит ник «аптека»"}
+  - name: q7_hint_no
+    initial: {scene: margo_q7}
+    steps:
+      - input: {text: "клэр"}
+        expect: {scene: margo_q7_hint}
+      - input: {choice: {interaction: hint_q7, value: "no"}}
+        expect:
+          outcome: q7_decline_hint
+          scene: margo_q7
+          actions:
+            - {type: text, exact: "Хорошо, попробуй ответить на вопрос еще раз."}
+            - {type: text, contains: "кому принадлежит ник «аптека»"}
+
+  - name: killer_hint_yes
+    initial: {scene: margo_killer}
+    steps:
+      - input: {text: "виктор"}
+        expect: {outcome: killer_wrong, scene: margo_killer_hint}
+      - input: {choice: {interaction: hint_killer, value: "yes"}}
+        expect:
+          outcome: killer_accept_hint
+          scene: margo_killer
+          actions:
+            - {type: text, contains: "У кого из мужчин нет алиби"}
+            - {type: text, exact: "Я в предвкушении! Итак, удиви меня!"}
+  - name: killer_hint_no
+    initial: {scene: margo_killer}
+    steps:
+      - input: {text: "виктор"}
+        expect: {scene: margo_killer_hint}
+      - input: {choice: {interaction: hint_killer, value: "no"}}
+        expect:
+          outcome: killer_decline_hint
+          scene: margo_killer
+          actions:
+            - {type: text, exact: "Хорошо, попробуй ответить на вопрос еще раз."}
+            - {type: text, exact: "Я в предвкушении! Итак, удиви меня!"}

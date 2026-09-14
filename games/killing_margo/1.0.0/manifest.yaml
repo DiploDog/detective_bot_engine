@@ -1,0 +1,20 @@
+schema_version: 1
+game_id: killing_margo
+version: 1.0.0
+display_title: "Убийство Марго"
+description: "Интерактивное расследование убийства Елены Миллер."
+language: ru
+game_file: game.yaml
+assets:
+  safe_closed:
+    type: image
+    path: assets/safe_closed.jpg
+  safe_open:
+    type: image
+    path: assets/safe_open.jpg
+  phone_recording:
+    type: audio
+    path: assets/phone_recording.mp3
+  final_police_report:
+    type: image
+    path: assets/final_police_report.jpg
