@@ -54,7 +54,7 @@ render и migration phase, затем примените application phase.
 ## Storage и backups
 
 Data PVC и backup PVC имеют размер 5Gi, `ReadWriteOnce` и
-`storageClassName: local-path-prov`. Backup запускается ежедневно в 03:00 UTC,
+`storageClassName: local-path`. Backup запускается ежедневно в 03:00 UTC,
 использует `pg_dump -Fc`, сначала атомарно завершает новый dump и только затем
 удаляет файлы старше 30 дней. `concurrencyPolicy: Forbid` не допускает
 параллельные backup jobs.
