@@ -6,8 +6,13 @@ from detective_bot.adapters.telegram.callback_data import (
     OpenMenuCallback,
     SelectGameCallback,
 )
-from detective_bot.adapters.vk.callback_data import pack_payload, unpack_payload
+from detective_bot.adapters.vk.callback_data import (
+    ChoicesPageCallback,
+    pack_payload,
+    unpack_payload,
+)
 from detective_bot.adapters.vk.inbound import (
+    ChoicesPageRequest,
     PRIVATE_CHAT_NOTICE,
     RejectedUpdate,
     RestartSelectedCommand,
@@ -26,6 +31,7 @@ def test_payload_round_trip() -> None:
         SelectGameCallback("example_game"),
         GameChoiceCallback("session-1", 4, "hint_q1", "yes"),
         GameChoiceCallback("session-1", 21, "read_article", 3),
+        ChoicesPageCallback("session-1", 21, "read_article", 1),
     )
     for payload in payloads:
         packed = pack_payload(payload)
@@ -69,6 +75,19 @@ def test_callback_maps_to_select_and_choice_input() -> None:
         interaction_id="hint_q1",
         value="yes",
         session_revision=2,
+    )
+
+    page = map_message_event(
+        callback_event(
+            pack_payload(ChoicesPageCallback("session-1", 20, "read_article", 1))
+        )
+    )
+    assert isinstance(page, ChoicesPageRequest)
+    assert page.callback == ChoicesPageCallback(
+        "session-1",
+        20,
+        "read_article",
+        1,
     )
 
 

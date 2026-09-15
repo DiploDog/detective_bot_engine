@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: detective-bot-postgres-backups
+  labels:
+    app.kubernetes.io/name: detective-bot-postgres-backup
+    app.kubernetes.io/part-of: detective-bot
+    detective-bot.io/deployment-phase: foundation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-prov
+  resources:
+    requests:
+      storage: 5Gi

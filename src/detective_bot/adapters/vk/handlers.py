@@ -7,6 +7,7 @@ from vkbottle.bot import Bot, Message, MessageEvent
 
 from detective_bot.adapters.vk.delivery import VkDeliveryService
 from detective_bot.adapters.vk.inbound import (
+    ChoicesPageRequest,
     GENERIC_USER_ERROR,
     IgnoredUpdate,
     RejectedUpdate,
@@ -48,7 +49,13 @@ class VkUpdateProcessor:
 
     async def _process(
         self,
-        inbound: IncomingInteraction | RejectedUpdate | RestartSelectedCommand | IgnoredUpdate,
+        inbound: (
+            IncomingInteraction
+            | RejectedUpdate
+            | RestartSelectedCommand
+            | ChoicesPageRequest
+            | IgnoredUpdate
+        ),
         peer_id: int,
         log_event_id: str,
     ) -> None:
@@ -56,6 +63,9 @@ class VkUpdateProcessor:
             return
         if isinstance(inbound, RejectedUpdate):
             await self._renderer.send_notice(peer_id, inbound.text)
+            return
+        if isinstance(inbound, ChoicesPageRequest):
+            await self._renderer.render_choices_page(peer_id, inbound)
             return
         try:
             interaction = await self._resolve(inbound)

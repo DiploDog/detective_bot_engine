@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: private
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres-data-pvc.yaml
+  - postgres-backup-pvc.yaml
+  - postgres-service.yaml
+  - postgres-statefulset.yaml
+  - migration-job.yaml
+  - telegram-deployment.yaml
+  - vk-deployment.yaml
+  - postgres-backup-cronjob.yaml
+
+images:
+  - name: detective-bot-image
+    newName: docker.io/replace-me/detective-bot
+    newTag: replace-me

@@ -14,7 +14,7 @@ from detective_bot.adapters.telegram.callback_data import (
     RequestRestartCallback,
     SelectGameCallback,
 )
-from detective_bot.adapters.vk.callback_data import unpack_payload
+from detective_bot.adapters.vk.callback_data import ChoicesPageCallback, unpack_payload
 from detective_bot.application.models import (
     CancelRestart,
     ConfirmRestart,
@@ -58,7 +58,20 @@ class IgnoredUpdate:
     pass
 
 
-InboundResult = IncomingInteraction | RejectedUpdate | RestartSelectedCommand | IgnoredUpdate
+@dataclass(frozen=True, slots=True)
+class ChoicesPageRequest:
+    player_context: PlayerContext
+    callback: ChoicesPageCallback
+    external_event_id: str
+
+
+InboundResult = (
+    IncomingInteraction
+    | RejectedUpdate
+    | RestartSelectedCommand
+    | ChoicesPageRequest
+    | IgnoredUpdate
+)
 
 
 def map_message(message: Message) -> InboundResult:
@@ -116,6 +129,8 @@ def map_message_event(event: MessageEvent) -> InboundResult:
             CancelRestart(payload.session_id),
             event_id,
         )
+    if isinstance(payload, ChoicesPageCallback):
+        return ChoicesPageRequest(identity, payload, event_id)
     if isinstance(payload, GameChoiceCallback):
         return IncomingInteraction(
             identity,

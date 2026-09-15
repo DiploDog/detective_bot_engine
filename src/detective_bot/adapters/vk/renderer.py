@@ -13,8 +13,8 @@ from detective_bot.adapters.telegram.callback_data import (
     GameChoiceCallback,
     SelectGameCallback,
 )
-from detective_bot.adapters.vk.callback_data import pack_payload
-from detective_bot.adapters.vk.inbound import STALE_BUTTON_NOTICE
+from detective_bot.adapters.vk.callback_data import ChoicesPageCallback, pack_payload
+from detective_bot.adapters.vk.inbound import ChoicesPageRequest, STALE_BUTTON_NOTICE
 from detective_bot.adapters.vk.sender import StaleVkAttachment, VkSender
 from detective_bot.application.models import (
     ApplicationOutput,
@@ -23,6 +23,7 @@ from detective_bot.application.models import (
     GameActions,
     MenuEntryState,
     Notice,
+    PlayerContext,
     ShowGameMenu,
     ShowRestartConfirmation,
     StaleInteraction,
@@ -79,6 +80,11 @@ class VkMediaPolicy:
 class _SessionRenderContext:
     revision: int
     options: dict[str, tuple[ChoiceActionOption, ...]]
+    actions: dict[str, ChoicesAction]
+
+
+VK_MAX_CHOICE_BUTTONS = 10
+VK_PAGINATED_CHOICE_PAGE_SIZE = 8
 
 
 class VkRenderer:
@@ -120,6 +126,39 @@ class VkRenderer:
 
     async def send_notice(self, peer_id: int, text: str) -> None:
         await self._sender.send_text(peer_id, text)
+
+    async def render_choices_page(
+        self,
+        peer_id: int,
+        request: ChoicesPageRequest,
+    ) -> None:
+        callback = request.callback
+        context = await self._load_session_context(
+            callback.session_id,
+            owner=request.player_context,
+        )
+        if context is None or context.revision != callback.revision:
+            await self._sender.send_text(peer_id, STALE_BUTTON_NOTICE)
+            return
+        action = context.actions.get(callback.interaction_id)
+        if action is None:
+            await self._sender.send_text(peer_id, STALE_BUTTON_NOTICE)
+            return
+        options = action.options or context.options.get(action.interaction, ())
+        if (
+            len(options) <= VK_MAX_CHOICE_BUTTONS
+            or callback.page >= self._page_count(options)
+        ):
+            await self._sender.send_text(peer_id, STALE_BUTTON_NOTICE)
+            return
+        await self._send_choices_page(
+            peer_id,
+            callback.session_id,
+            action,
+            context,
+            options,
+            callback.page,
+        )
 
     async def _render_output(self, peer_id: int, output: ApplicationOutput) -> None:
         if isinstance(output, DuplicateInteraction):
@@ -284,8 +323,35 @@ class VkRenderer:
         context: _SessionRenderContext,
     ) -> None:
         options = action.options or context.options.get(action.interaction, ())
+        await self._send_choices_page(
+            peer_id,
+            session_id,
+            action,
+            context,
+            options,
+            0,
+        )
+
+    async def _send_choices_page(
+        self,
+        peer_id: int,
+        session_id: str,
+        action: ChoicesAction,
+        context: _SessionRenderContext,
+        options: tuple[ChoiceActionOption, ...],
+        page: int,
+    ) -> None:
+        paginated = len(options) > VK_MAX_CHOICE_BUTTONS
+        visible = (
+            options[
+                page * VK_PAGINATED_CHOICE_PAGE_SIZE :
+                (page + 1) * VK_PAGINATED_CHOICE_PAGE_SIZE
+            ]
+            if paginated
+            else options
+        )
         keyboard = Keyboard(inline=True)
-        for option in options:
+        for option in visible:
             keyboard.add(
                 Callback(
                     option.label,
@@ -300,24 +366,63 @@ class VkRenderer:
                 )
             )
             keyboard.row()
+        if paginated:
+            if page > 0:
+                keyboard.add(
+                    Callback(
+                        "Назад",
+                        pack_payload(
+                            ChoicesPageCallback(
+                                session_id=session_id,
+                                revision=context.revision,
+                                interaction_id=action.interaction,
+                                page=page - 1,
+                            )
+                        ),
+                    )
+                )
+            if page + 1 < self._page_count(options):
+                keyboard.add(
+                    Callback(
+                        "Далее",
+                        pack_payload(
+                            ChoicesPageCallback(
+                                session_id=session_id,
+                                revision=context.revision,
+                                interaction_id=action.interaction,
+                                page=page + 1,
+                            )
+                        ),
+                    )
+                )
         await self._sender.send_text(
             peer_id,
             action.text,
-            keyboard=keyboard.get_json() if options else None,
+            keyboard=keyboard.get_json() if visible else None,
         )
 
     async def _session_context(self, session_id: str) -> _SessionRenderContext:
+        context = await self._load_session_context(session_id)
+        return context or _SessionRenderContext(revision=0, options={}, actions={})
+
+    async def _load_session_context(
+        self,
+        session_id: str,
+        *,
+        owner: PlayerContext | None = None,
+    ) -> _SessionRenderContext | None:
         if self._catalog is None or self._uow_factory is None:
-            return _SessionRenderContext(revision=0, options={})
+            return None
         async with self._uow_factory() as uow:
             session = await uow.sessions.get(session_id)
-        if session is None:
-            return _SessionRenderContext(revision=0, options={})
+        if session is None or (owner is not None and session.player_context != owner):
+            return None
         loaded = self._catalog.get(session.game_id, session.game_version)
         scene = loaded.package.definition.scenes.get(
             session.engine_snapshot.current_scene
         )
         options: dict[str, tuple[ChoiceActionOption, ...]] = {}
+        actions: dict[str, ChoicesAction] = {}
         if scene is not None:
             for interaction in scene.interactions:
                 if isinstance(interaction.input, ChoiceInputSpec):
@@ -325,7 +430,38 @@ class VkRenderer:
                         ChoiceActionOption(value=value, label=option.label)
                         for value, option in interaction.input.options.items()
                     )
+            action_groups = [scene.on_enter, scene.fallback.actions]
+            action_groups.extend(
+                outcome.actions
+                for interaction in scene.interactions
+                for outcome in interaction.outcomes
+            )
+            for group in action_groups:
+                self._collect_choices(actions, group)
+        for template in loaded.package.definition.scheduled_actions.values():
+            if (
+                template.guard is None
+                or template.guard.current_scene is None
+                or template.guard.current_scene == session.engine_snapshot.current_scene
+            ):
+                self._collect_choices(actions, template.actions)
         return _SessionRenderContext(
             revision=session.engine_snapshot.revision,
             options=options,
+            actions=actions,
         )
+
+    @staticmethod
+    def _collect_choices(
+        choices: dict[str, ChoicesAction],
+        actions: tuple[TextAction | MediaAction | ChoicesAction, ...],
+    ) -> None:
+        for action in actions:
+            if isinstance(action, ChoicesAction):
+                choices.setdefault(action.interaction, action)
+
+    @staticmethod
+    def _page_count(options: tuple[ChoiceActionOption, ...]) -> int:
+        return (
+            len(options) + VK_PAGINATED_CHOICE_PAGE_SIZE - 1
+        ) // VK_PAGINATED_CHOICE_PAGE_SIZE

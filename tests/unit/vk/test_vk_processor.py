@@ -13,10 +13,15 @@ from detective_bot.adapters.telegram.callback_data import (
     unpack_callback,
 )
 from detective_bot.adapters.vk.callback_data import pack_payload
+from detective_bot.adapters.vk.callback_data import (
+    ChoicesPageCallback,
+    unpack_payload,
+)
 from detective_bot.adapters.vk.inbound import PRIVATE_CHAT_NOTICE, STALE_BUTTON_NOTICE
 from detective_bot.adapters.vk.renderer import VkMediaPolicy, VkRenderer
 from detective_bot.application.models import ApplicationResult, GameActions
-from detective_bot.engine.model import MediaAction
+from detective_bot.engine.model import ChoicesAction, MediaAction
+from detective_bot.infrastructure.game_catalog import FileSystemGameCatalog
 from tests.fakes.telegram import MappingMediaResolver
 from tests.fakes.vk import RecordingVkSender
 from tests.unit.vk.conftest import (
@@ -47,6 +52,36 @@ def first_payload(sender: RecordingVkSender, contained: str) -> dict:
             if contained in label:
                 return payload
     raise AssertionError(f"no button contains {contained!r}")
+
+
+async def render_article_choices(vk_harness) -> None:
+    processor, sender, uow = vk_harness
+    await processor.process_message_event(
+        callback_event(pack_payload(SelectGameCallback("killing_margo")), event_id="1")
+    )
+    session = uow.sessions.sessions["session-1"]
+    uow.sessions.sessions["session-1"] = replace(
+        session,
+        engine_snapshot=session.engine_snapshot.model_copy(
+            update={"current_scene": "margo_articles", "revision": 20}
+        ),
+    )
+    definition = FileSystemGameCatalog(ROOT / "games").get(
+        "killing_margo",
+        "1.0.0",
+    ).package.definition
+    action = next(
+        item
+        for item in definition.scheduled_actions["reveal_articles"].actions
+        if isinstance(item, ChoicesAction)
+    )
+    sender.calls.clear()
+    await processor._renderer.render(
+        PEER_ID,
+        ApplicationResult(
+            (GameActions(session_id="session-1", actions=(action,)),)
+        ),
+    )
 
 
 async def test_start_opens_menu_without_creating_sessions(vk_harness) -> None:
@@ -175,6 +210,8 @@ async def test_hint_choice_uses_generic_callback(vk_harness) -> None:
         "margo_q1_hint"
     )
     yes = first_payload(sender, "Да")
+    assert "Назад" not in button_labels(sender)
+    assert "Далее" not in button_labels(sender)
     payload = unpack_callback(yes["p"])
     assert isinstance(payload, GameChoiceCallback)
     sender.calls.clear()
@@ -231,6 +268,67 @@ async def test_stale_game_callback_does_not_mutate(vk_harness) -> None:
         == "margo_q1_hint"
     )
     assert uow.sessions.sessions["session-1"].engine_snapshot.revision == revision
+
+
+async def test_oversized_choices_paginate_forward_and_back(vk_harness) -> None:
+    processor, sender, _uow = vk_harness
+    await render_article_choices(vk_harness)
+    first_labels = button_labels(sender)
+    assert len(first_labels) == 9
+    assert sum(label[:1].isdigit() for label in first_labels) == 8
+    assert "Далее" in first_labels
+    next_payload = first_payload(sender, "Далее")
+    assert unpack_payload(next_payload) == ChoicesPageCallback(
+        "session-1",
+        20,
+        "read_article",
+        1,
+    )
+
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(next_payload, event_id="2"))
+    second_labels = button_labels(sender)
+    assert len(second_labels) == 4
+    assert any(label.startswith("9.") for label in second_labels)
+    assert any(label.startswith("10.") for label in second_labels)
+    assert any(label.startswith("11.") for label in second_labels)
+    assert "Назад" in second_labels
+
+    back_payload = first_payload(sender, "Назад")
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(back_payload, event_id="3"))
+    assert button_labels(sender) == first_labels
+
+
+async def test_choice_on_second_page_is_regular_semantic_input(vk_harness) -> None:
+    processor, sender, uow = vk_harness
+    await render_article_choices(vk_harness)
+    next_payload = first_payload(sender, "Далее")
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(next_payload, event_id="2"))
+    article_payload = first_payload(sender, "9.")
+    assert isinstance(unpack_payload(article_payload), GameChoiceCallback)
+
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(article_payload, event_id="3"))
+    assert any("Springfield FC" in text for text in texts(sender))
+    assert uow.sessions.sessions["session-1"].engine_snapshot.revision == 20
+
+
+async def test_stale_pagination_callback_does_not_call_engine(vk_harness) -> None:
+    processor, sender, uow = vk_harness
+    await render_article_choices(vk_harness)
+    next_payload = first_payload(sender, "Далее")
+    session = uow.sessions.sessions["session-1"]
+    uow.sessions.sessions["session-1"] = replace(
+        session,
+        engine_snapshot=session.engine_snapshot.model_copy(update={"revision": 21}),
+    )
+
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(next_payload, event_id="2"))
+    assert texts(sender) == [STALE_BUTTON_NOTICE]
+    assert uow.sessions.sessions["session-1"].engine_snapshot.revision == 21
 
 
 async def test_private_chat_restriction(vk_harness) -> None:

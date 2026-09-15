@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: detective-bot-telegram
+  labels:
+    app.kubernetes.io/name: detective-bot-telegram
+    app.kubernetes.io/part-of: detective-bot
+    detective-bot.io/deployment-phase: application
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: detective-bot-telegram
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: detective-bot-telegram
+        app.kubernetes.io/part-of: detective-bot
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: telegram
+          image: detective-bot-image
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -m
+            - detective_bot.entrypoints.telegram
+          envFrom:
+            - configMapRef:
+                name: detective-bot-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: detective-bot-secrets
+                  key: DATABASE_URL
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: detective-bot-secrets
+                  key: TELEGRAM_BOT_TOKEN
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL

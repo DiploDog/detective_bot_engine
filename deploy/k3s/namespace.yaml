@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: private
+  labels:
+    app.kubernetes.io/part-of: detective-bot
+    detective-bot.io/deployment-phase: foundation

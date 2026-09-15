@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: detective-bot-config
+  labels:
+    app.kubernetes.io/part-of: detective-bot
+    detective-bot.io/deployment-phase: foundation
+data:
+  GAMES_ROOT: /app/games
+  LOG_LEVEL: INFO

@@ -1,0 +1,93 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: detective-bot-postgres-backup
+  labels:
+    app.kubernetes.io/name: detective-bot-postgres-backup
+    app.kubernetes.io/part-of: detective-bot
+    detective-bot.io/deployment-phase: application
+spec:
+  schedule: "0 3 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: detective-bot-postgres-backup
+        app.kubernetes.io/part-of: detective-bot
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: detective-bot-postgres-backup
+            app.kubernetes.io/part-of: detective-bot
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 70
+            runAsGroup: 70
+            fsGroup: 70
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-dump
+              image: postgres:16-alpine
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PGHOST
+                  value: detective-bot-postgres
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: detective-bot-secrets
+                      key: POSTGRES_USER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: detective-bot-secrets
+                      key: POSTGRES_PASSWORD
+                - name: PGDATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: detective-bot-secrets
+                      key: POSTGRES_DB
+              command:
+                - sh
+                - -ec
+                - |
+                  umask 077
+                  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                  final="/backups/detective_bot_${timestamp}.dump"
+                  temporary="${final}.tmp"
+                  trap 'rm -f "$temporary"' EXIT
+                  pg_dump -Fc --file="$temporary"
+                  mv "$temporary" "$final"
+                  trap - EXIT
+                  find /backups -type f -name 'detective_bot_*.dump' -mtime +30 -delete
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 128Mi
+                limits:
+                  cpu: 300m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: detective-bot-postgres-backups
