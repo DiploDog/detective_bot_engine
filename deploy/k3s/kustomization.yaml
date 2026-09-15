@@ -17,5 +17,5 @@ resources:
 
 images:
   - name: detective-bot-image
-    newName: docker.io/replace-me/detective-bot
-    newTag: replace-me
+    newName: evmhub/detective-bot
+    newTag: df0e239

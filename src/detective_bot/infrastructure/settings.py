@@ -15,6 +15,7 @@ class TelegramSettings:
     bot_token: str
     database_url: str
     games_root: Path
+    telegram_proxy_url: str
     log_level: str = "INFO"
     document_asset_ids: frozenset[str] = frozenset()
 
@@ -24,6 +25,9 @@ def load_telegram_settings(
 ) -> TelegramSettings:
     env = os.environ if environ is None else environ
     token = env.get("TELEGRAM_BOT_TOKEN", "").strip()
+    telegram_proxy_url = env.get("TELEGRAM_PROXY_URL", "").strip()
+    if not telegram_proxy_url:
+        raise SettingsError("TELEGRAM_PROXY_URL is required")
     if not token:
         raise SettingsError("TELEGRAM_BOT_TOKEN is required")
     database_url = env.get("DATABASE_URL", "").strip()
@@ -48,6 +52,7 @@ def load_telegram_settings(
         games_root=games_root,
         log_level=log_level,
         document_asset_ids=document_assets,
+        telegram_proxy_url=telegram_proxy_url,
     )
 
 

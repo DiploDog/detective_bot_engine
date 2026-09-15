@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.session.aiohttp import AiohttpSession
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from detective_bot.adapters.telegram.delivery import (
@@ -73,6 +74,9 @@ class TelegramRuntime:
         logging.basicConfig(level=self._settings.log_level)
         catalog = FileSystemGameCatalog(self._settings.games_root)
         validate_game_catalog(catalog)
+        session = AiohttpSession(
+                proxy=self._settings.telegram_proxy_url
+            ) if self._settings.telegram_proxy_url else AiohttpSession()
         self.engine = create_postgres_engine(self._settings.database_url)
         session_factory = create_session_factory(self.engine)
         uow_factory = PostgresUnitOfWorkFactory(session_factory)
@@ -83,7 +87,7 @@ class TelegramRuntime:
             clock=utc_clock,
             session_id_factory=new_session_id,
         )
-        self.bot = Bot(self._settings.bot_token)
+        self.bot = Bot(self._settings.bot_token, session=session)
         sender = AiogramTelegramSender(self.bot)
         media_cache = PostgresTelegramMediaCache(session_factory)
         renderer = TelegramRenderer(
