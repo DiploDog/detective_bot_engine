@@ -16,6 +16,6 @@ resources:
   - postgres-backup-cronjob.yaml
 
 images:
-  - name: detective-bot
+  - name: detective-bot-image
     newName: evmhub/detective-bot
     newTag: ba6458b
