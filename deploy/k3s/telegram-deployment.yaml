@@ -49,6 +49,11 @@ spec:
                 secretKeyRef:
                   name: detective-bot-secrets
                   key: TELEGRAM_BOT_TOKEN
+            - name: TELEGRAM_PROXY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: detective-bot-secrets
+                  key: TELEGRAM_PROXY_URL
           resources:
             requests:
               cpu: 25m
