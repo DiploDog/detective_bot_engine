@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import json
 from pathlib import Path
 
 from detective_bot.adapters.media import ResolvedMedia
@@ -44,6 +45,14 @@ def button_labels(sender: RecordingVkSender) -> list[str]:
     for call in sender.calls:
         labels.extend(label for label, _payload in keyboard_buttons(call.keyboard))
     return labels
+
+
+def keyboard_rows(sender: RecordingVkSender) -> list[list[str]]:
+    keyboard = next(call.keyboard for call in reversed(sender.calls) if call.keyboard)
+    return [
+        [button["action"]["label"] for button in row]
+        for row in json.loads(keyboard)["buttons"]
+    ]
 
 
 def first_payload(sender: RecordingVkSender, contained: str) -> dict:
@@ -212,6 +221,7 @@ async def test_hint_choice_uses_generic_callback(vk_harness) -> None:
     yes = first_payload(sender, "Да")
     assert "Назад" not in button_labels(sender)
     assert "Далее" not in button_labels(sender)
+    assert keyboard_rows(sender) == [["Да"], ["Нет"]]
     payload = unpack_callback(yes["p"])
     assert isinstance(payload, GameChoiceCallback)
     sender.calls.clear()
@@ -274,9 +284,11 @@ async def test_oversized_choices_paginate_forward_and_back(vk_harness) -> None:
     processor, sender, _uow = vk_harness
     await render_article_choices(vk_harness)
     first_labels = button_labels(sender)
-    assert len(first_labels) == 9
-    assert sum(label[:1].isdigit() for label in first_labels) == 8
+    first_rows = keyboard_rows(sender)
+    assert len(first_labels) == 6
+    assert sum(label[:1].isdigit() for label in first_labels) == 5
     assert "Далее" in first_labels
+    assert len(first_rows) == 6
     next_payload = first_payload(sender, "Далее")
     assert unpack_payload(next_payload) == ChoicesPageCallback(
         "session-1",
@@ -288,16 +300,30 @@ async def test_oversized_choices_paginate_forward_and_back(vk_harness) -> None:
     sender.calls.clear()
     await processor.process_message_event(callback_event(next_payload, event_id="2"))
     second_labels = button_labels(sender)
-    assert len(second_labels) == 4
-    assert any(label.startswith("9.") for label in second_labels)
+    second_rows = keyboard_rows(sender)
+    assert len(second_labels) == 7
+    assert any(label.startswith("6.") for label in second_labels)
     assert any(label.startswith("10.") for label in second_labels)
-    assert any(label.startswith("11.") for label in second_labels)
     assert "Назад" in second_labels
+    assert "Далее" in second_labels
+    assert len(second_rows) == 6
+    assert second_rows[-1] == ["Назад", "Далее"]
+
+    next_payload = first_payload(sender, "Далее")
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(next_payload, event_id="3"))
+    third_labels = button_labels(sender)
+    third_rows = keyboard_rows(sender)
+    assert len(third_labels) == 2
+    assert any(label.startswith("11.") for label in third_labels)
+    assert "Назад" in third_labels
+    assert "Далее" not in third_labels
+    assert len(third_rows) == 2
 
     back_payload = first_payload(sender, "Назад")
     sender.calls.clear()
-    await processor.process_message_event(callback_event(back_payload, event_id="3"))
-    assert button_labels(sender) == first_labels
+    await processor.process_message_event(callback_event(back_payload, event_id="4"))
+    assert keyboard_rows(sender) == second_rows
 
 
 async def test_choice_on_second_page_is_regular_semantic_input(vk_harness) -> None:
@@ -312,6 +338,24 @@ async def test_choice_on_second_page_is_regular_semantic_input(vk_harness) -> No
     sender.calls.clear()
     await processor.process_message_event(callback_event(article_payload, event_id="3"))
     assert any("Springfield FC" in text for text in texts(sender))
+    assert uow.sessions.sessions["session-1"].engine_snapshot.revision == 20
+
+
+async def test_choice_on_third_page_is_regular_semantic_input(vk_harness) -> None:
+    processor, sender, uow = vk_harness
+    await render_article_choices(vk_harness)
+    next_payload = first_payload(sender, "Далее")
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(next_payload, event_id="2"))
+    next_payload = first_payload(sender, "Далее")
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(next_payload, event_id="3"))
+    article_payload = first_payload(sender, "11.")
+    assert isinstance(unpack_payload(article_payload), GameChoiceCallback)
+
+    sender.calls.clear()
+    await processor.process_message_event(callback_event(article_payload, event_id="4"))
+    assert any("Cheesus Crust" in text for text in texts(sender))
     assert uow.sessions.sessions["session-1"].engine_snapshot.revision == 20
 
 

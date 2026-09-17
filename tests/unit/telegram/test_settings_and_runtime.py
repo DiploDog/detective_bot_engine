@@ -46,6 +46,18 @@ def test_settings_load_from_environment() -> None:
     assert settings.bot_token == "1:token"
     assert settings.document_asset_ids == frozenset({"report_asset"})
     assert settings.games_root == ROOT / "games"
+    assert settings.telegram_proxy_url is None
+
+
+def test_settings_load_optional_proxy_from_environment() -> None:
+    settings = load_telegram_settings(
+        {
+            "TELEGRAM_BOT_TOKEN": "1:token",
+            "DATABASE_URL": "postgresql+asyncpg://user:pass@127.0.0.1:5432/db",
+            "TELEGRAM_PROXY_URL": "http://proxy.example:8080",
+        }
+    )
+    assert settings.telegram_proxy_url == "http://proxy.example:8080"
 
 
 async def test_runtime_setup_validates_catalog_without_polling() -> None:

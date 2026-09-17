@@ -83,8 +83,8 @@ class _SessionRenderContext:
     actions: dict[str, ChoicesAction]
 
 
-VK_MAX_CHOICE_BUTTONS = 10
-VK_PAGINATED_CHOICE_PAGE_SIZE = 8
+VK_MAX_CHOICE_ROWS = 5
+VK_PAGINATED_CHOICE_PAGE_SIZE = 5
 
 
 class VkRenderer:
@@ -146,7 +146,7 @@ class VkRenderer:
             return
         options = action.options or context.options.get(action.interaction, ())
         if (
-            len(options) <= VK_MAX_CHOICE_BUTTONS
+            len(options) <= VK_MAX_CHOICE_ROWS
             or callback.page >= self._page_count(options)
         ):
             await self._sender.send_text(peer_id, STALE_BUTTON_NOTICE)
@@ -341,7 +341,7 @@ class VkRenderer:
         options: tuple[ChoiceActionOption, ...],
         page: int,
     ) -> None:
-        paginated = len(options) > VK_MAX_CHOICE_BUTTONS
+        paginated = len(options) > VK_MAX_CHOICE_ROWS
         visible = (
             options[
                 page * VK_PAGINATED_CHOICE_PAGE_SIZE :

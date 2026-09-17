@@ -113,6 +113,7 @@ class VkbottleVkSender:
         if attachment is None:
             attachment = await self._docs.upload(
                 file_source=_existing_file_source(path),
+                group_id=self._community_id,
                 peer_id=peer_id,
             )
         await self._send_media(peer_id, attachment, caption, keyboard, cached=file_id)
