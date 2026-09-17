@@ -64,6 +64,7 @@ class LoadedGamePackage:
     package: GamePackage
     package_root: Path
     asset_paths: Mapping[str, Path]
+    asset_variant_paths: Mapping[str, Mapping[str, Path]]
     issues: tuple[ValidationIssue, ...]
 
 
@@ -156,6 +157,7 @@ def load_game_package(package_root: str | Path) -> LoadedGamePackage:
     issues.extend(validate_package(package))
 
     asset_paths: dict[str, Path] = {}
+    asset_variant_paths: dict[str, Mapping[str, Path]] = {}
     for asset_id, asset in manifest.assets.items():
         asset_path = _resolve_package_path(
             root,
@@ -174,6 +176,26 @@ def load_game_package(package_root: str | Path) -> LoadedGamePackage:
             )
             continue
         asset_paths[asset_id] = asset_path
+        variants: dict[str, Path] = {}
+        for platform, variant in asset.variants.items():
+            variant_path = _resolve_package_path(
+                root,
+                variant,
+                f"manifest.assets.{asset_id}.variants.{platform}",
+                issues,
+            )
+            if variant_path is None:
+                continue
+            if not variant_path.is_file():
+                _error(
+                    issues,
+                    "missing_asset",
+                    f"manifest.assets.{asset_id}.variants.{platform}",
+                    f"asset file does not exist: {variant}",
+                )
+                continue
+            variants[platform] = variant_path
+        asset_variant_paths[asset_id] = MappingProxyType(variants)
 
     collected = tuple(issues)
     if has_errors(collected):
@@ -182,6 +204,7 @@ def load_game_package(package_root: str | Path) -> LoadedGamePackage:
         package=package,
         package_root=root,
         asset_paths=MappingProxyType(asset_paths),
+        asset_variant_paths=MappingProxyType(asset_variant_paths),
         issues=collected,
     )
 

@@ -75,7 +75,7 @@ class VkRuntime:
         media_cache = PostgresVkMediaCache(session_factory)
         renderer = VkRenderer(
             sender=sender,
-            resolver=CatalogMediaResolver(catalog, uow_factory),
+            resolver=CatalogMediaResolver(catalog, uow_factory, platform="vk"),
             policy=VkMediaPolicy(self._settings.document_asset_ids),
             catalog=catalog,
             uow_factory=uow_factory,

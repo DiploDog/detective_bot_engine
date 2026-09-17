@@ -11,6 +11,7 @@ from detective_bot.adapters.telegram.callback_data import (
     CancelRestartCallback,
     ConfirmRestartCallback,
     GameChoiceCallback,
+    RequestRestartCallback,
     SelectGameCallback,
 )
 from detective_bot.adapters.vk.callback_data import ChoicesPageCallback, pack_payload
@@ -85,6 +86,15 @@ class _SessionRenderContext:
 
 VK_MAX_CHOICE_ROWS = 5
 VK_PAGINATED_CHOICE_PAGE_SIZE = 5
+VK_MAX_BUTTON_LABEL_LENGTH = 40
+
+
+def _short_button_label(label: str, *, prefix: str = "") -> str:
+    candidate = f"{prefix}{label}"
+    if len(candidate) <= VK_MAX_BUTTON_LABEL_LENGTH:
+        return candidate
+    available = VK_MAX_BUTTON_LABEL_LENGTH - len(prefix) - 1
+    return f"{prefix}{label[:available]}…"
 
 
 class VkRenderer:
@@ -182,13 +192,35 @@ class VkRenderer:
     async def _render_menu(self, peer_id: int, menu: ShowGameMenu) -> None:
         keyboard = Keyboard(inline=True)
         for game in menu.games:
-            label = (
-                f"Продолжить: {game.display_title}"
-                if game.state is MenuEntryState.CONTINUE
-                else game.display_title
-            )
+            if game.state is MenuEntryState.CONTINUE:
+                if game.session_id is None:
+                    raise ValueError("resumable menu entry requires session_id")
+                keyboard.add(
+                    Callback(
+                        _short_button_label(f"Продолжить: {game.display_title}"),
+                        pack_payload(
+                            SelectGameCallback(game_id=game.game_id)
+                        ),
+                    )
+                )
+                keyboard.row()
+                keyboard.add(
+                    Callback(
+                        _short_button_label(f"Начать заново: {game.display_title}"),
+                        pack_payload(
+                            RequestRestartCallback(
+                                session_id=game.session_id,
+                            )
+                        ),
+                    )
+                )
+                keyboard.row()
+                continue
             keyboard.add(
-                Callback(label, pack_payload(SelectGameCallback(game_id=game.game_id)))
+                Callback(
+                    _short_button_label(game.display_title),
+                    pack_payload(SelectGameCallback(game_id=game.game_id)),
+                )
             )
             keyboard.row()
         await self._sender.send_text(
@@ -204,10 +236,16 @@ class VkRenderer:
     ) -> None:
         keyboard = Keyboard(inline=True)
         keyboard.add(
-            Callback("Да", pack_payload(ConfirmRestartCallback(confirmation.session_id)))
+            Callback(
+                _short_button_label("Да"),
+                pack_payload(ConfirmRestartCallback(confirmation.session_id)),
+            )
         )
         keyboard.add(
-            Callback("Нет", pack_payload(CancelRestartCallback(confirmation.session_id)))
+            Callback(
+                _short_button_label("Нет"),
+                pack_payload(CancelRestartCallback(confirmation.session_id)),
+            )
         )
         await self._sender.send_text(
             peer_id,
@@ -279,13 +317,13 @@ class VkRenderer:
         ):
             return "document"
         if media.asset_type == "audio":
-            return "audio"
+            return "voice"
         return "photo"
 
     def _media_method(self, kind: str):
         if kind == "document":
             return self._sender.send_document
-        if kind == "audio":
+        if kind == "voice":
             return self._sender.send_audio
         return self._sender.send_photo
 
@@ -351,10 +389,24 @@ class VkRenderer:
             else options
         )
         keyboard = Keyboard(inline=True)
-        for option in visible:
+        first_index = page * VK_PAGINATED_CHOICE_PAGE_SIZE if paginated else 0
+        has_long_labels = any(
+            len(option.label) > VK_MAX_BUTTON_LABEL_LENGTH for option in visible
+        )
+        for index, option in enumerate(visible, start=first_index + 1):
+            prefix = f"{index}. "
+            compact_source = (
+                option.label[len(prefix) :]
+                if option.label.startswith(prefix)
+                else option.label
+            )
             keyboard.add(
                 Callback(
-                    option.label,
+                    (
+                        _short_button_label(compact_source, prefix=prefix)
+                        if len(option.label) > VK_MAX_BUTTON_LABEL_LENGTH
+                        else option.label
+                    ),
                     pack_payload(
                         GameChoiceCallback(
                             session_id=session_id,
@@ -370,7 +422,7 @@ class VkRenderer:
             if page > 0:
                 keyboard.add(
                     Callback(
-                        "Назад",
+                        _short_button_label("Назад"),
                         pack_payload(
                             ChoicesPageCallback(
                                 session_id=session_id,
@@ -384,7 +436,7 @@ class VkRenderer:
             if page + 1 < self._page_count(options):
                 keyboard.add(
                     Callback(
-                        "Далее",
+                        _short_button_label("Далее"),
                         pack_payload(
                             ChoicesPageCallback(
                                 session_id=session_id,
@@ -395,9 +447,20 @@ class VkRenderer:
                         ),
                     )
                 )
+        text = action.text
+        if has_long_labels:
+            full_labels = "\n".join(
+                (
+                    option.label
+                    if option.label.startswith(f"{index}. ")
+                    else f"{index}. {option.label}"
+                )
+                for index, option in enumerate(visible, start=first_index + 1)
+            )
+            text = f"{text}\n\n{full_labels}"
         await self._sender.send_text(
             peer_id,
-            action.text,
+            text,
             keyboard=keyboard.get_json() if visible else None,
         )
 

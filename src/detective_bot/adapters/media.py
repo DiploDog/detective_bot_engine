@@ -28,9 +28,12 @@ class CatalogMediaResolver:
         self,
         catalog: FileSystemGameCatalog,
         uow_factory: UnitOfWorkFactory,
+        *,
+        platform: str | None = None,
     ) -> None:
         self._catalog = catalog
         self._uow_factory = uow_factory
+        self._platform = platform
 
     async def resolve(self, session_id: str, asset_id: str) -> ResolvedMedia:
         async with self._uow_factory() as uow:
@@ -42,6 +45,11 @@ class CatalogMediaResolver:
         asset = loaded.package.manifest.assets.get(asset_id)
         if path is None or asset is None:
             raise MediaResolutionError(f"asset is not installed: {asset_id}")
+        if self._platform is not None:
+            path = loaded.asset_variant_paths.get(asset_id, {}).get(
+                self._platform,
+                path,
+            )
         return ResolvedMedia(
             asset_id=asset_id,
             asset_type=asset.type,

@@ -91,7 +91,7 @@ def vk_harness() -> tuple[VkUpdateProcessor, RecordingVkSender, InMemoryUnitOfWo
     sender = RecordingVkSender()
     renderer = VkRenderer(
         sender=sender,
-        resolver=CatalogMediaResolver(catalog, uow_factory),
+        resolver=CatalogMediaResolver(catalog, uow_factory, platform="vk"),
         policy=VkMediaPolicy(),
         catalog=catalog,
         uow_factory=uow_factory,

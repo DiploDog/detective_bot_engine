@@ -4,7 +4,13 @@ from pathlib import Path
 from typing import Protocol
 import random
 
-from vkbottle import API, DocMessagesUploader, PhotoMessageUploader, VKAPIError
+from vkbottle import (
+    API,
+    DocMessagesUploader,
+    PhotoMessageUploader,
+    VKAPIError,
+    VoiceMessageUploader,
+)
 
 
 class StaleVkAttachment(RuntimeError):
@@ -59,6 +65,7 @@ class VkbottleVkSender:
         self._community_id = int(community_id) if community_id else None
         self._photos = PhotoMessageUploader(api)
         self._docs = DocMessagesUploader(api)
+        self._voices = VoiceMessageUploader(api)
 
     async def send_text(
         self,
@@ -92,13 +99,15 @@ class VkbottleVkSender:
         *,
         file_id: str | None = None,
     ) -> str | None:
-        return await self.send_document(
-            peer_id,
-            path,
-            caption,
-            keyboard,
-            file_id=file_id,
-        )
+        attachment = file_id
+        if attachment is None:
+            attachment = await self._voices.upload(
+                file_source=_existing_file_source(path),
+                group_id=self._community_id,
+                peer_id=peer_id,
+            )
+        await self._send_media(peer_id, attachment, caption, keyboard, cached=file_id)
+        return attachment
 
     async def send_document(
         self,

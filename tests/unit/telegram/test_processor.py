@@ -313,3 +313,28 @@ async def test_media_methods_follow_type_and_document_policy() -> None:
     assert sender.calls[0].path == image
     assert sender.calls[1].path == audio
     assert sender.calls[2].path == report
+
+
+async def test_telegram_audio_uses_default_asset(telegram_harness) -> None:
+    processor, sender, _uow = telegram_harness
+    await processor.process_update(
+        callback_update(pack_callback(SelectGameCallback("killing_margo")))
+    )
+    sender.calls.clear()
+
+    await processor._renderer.render(
+        CHAT_ID,
+        ApplicationResult(
+            (
+                GameActions(
+                    session_id="session-1",
+                    actions=(MediaAction(type="media", asset="phone_recording"),),
+                ),
+            )
+        ),
+    )
+
+    assert sender.calls[0].method == "audio"
+    assert sender.calls[0].path == (
+        ROOT / "games/killing_margo/1.0.0/assets/phone_recording.mp3"
+    )

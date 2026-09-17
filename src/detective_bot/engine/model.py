@@ -50,6 +50,14 @@ class EngineModel(BaseModel):
 class AssetDefinition(EngineModel):
     type: Literal["image", "audio", "document", "video"]
     path: str
+    variants: dict[MachineId, str] = Field(default_factory=dict)
+
+    @field_validator("variants")
+    @classmethod
+    def freeze_variants(
+        cls, value: dict[MachineId, str]
+    ) -> FrozenDict[MachineId, str]:
+        return FrozenDict(value)
 
 
 class GameManifest(EngineModel):
