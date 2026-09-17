@@ -18,4 +18,4 @@ resources:
 images:
   - name: detective-bot-image
     newName: evmhub/detective-bot
-    newTag: 72de66b
+    newTag: 3b3ebc0
