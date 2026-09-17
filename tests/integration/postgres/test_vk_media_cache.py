@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from detective_bot.adapters.media import ResolvedMedia, sha256_file
 from detective_bot.adapters.vk.renderer import VkMediaPolicy, VkRenderer
 from detective_bot.application.models import ApplicationResult, GameActions
@@ -53,6 +55,28 @@ async def render_closed(renderer: VkRenderer) -> None:
             )
         ),
     )
+
+
+@pytest.mark.parametrize(
+    ("media_kind", "digest"),
+    (
+        ("photo", "1" * 64),
+        ("audio", "2" * 64),
+        ("document", "3" * 64),
+        ("voice", "4" * 64),
+    ),
+)
+async def test_cache_accepts_all_vk_media_kinds(
+    session_factory,
+    media_kind: str,
+    digest: str,
+) -> None:
+    cache = PostgresVkMediaCache(session_factory)
+    attachment = f"{media_kind}-attachment"
+
+    await cache.put("100", digest, media_kind, attachment, now=NOW)
+
+    assert await cache.get("100", digest, media_kind) == attachment
 
 
 async def test_media_cache_miss_uploads_and_stores_attachment(

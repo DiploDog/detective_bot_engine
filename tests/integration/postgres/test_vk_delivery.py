@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from vkbottle import VKAPIError
 
-from detective_bot.adapters.media import CatalogMediaResolver
+from detective_bot.adapters.media import CatalogMediaResolver, sha256_file
 from detective_bot.adapters.telegram.callback_data import SelectGameCallback
 from detective_bot.adapters.vk.callback_data import pack_payload
 from detective_bot.adapters.vk.delivery import VkDeliveryService
@@ -30,6 +30,7 @@ from detective_bot.infrastructure.postgres.models import (
     OutboundDeliveryRow,
     ScheduledActionRow,
 )
+from detective_bot.infrastructure.postgres.media_cache import PostgresVkMediaCache
 from detective_bot.infrastructure.postgres.uow import PostgresUnitOfWorkFactory
 from tests.fakes import InMemoryVkMediaCache, RecordingVkSender
 from tests.integration.postgres.conftest import NOW, ROOT
@@ -53,6 +54,7 @@ def make_stack(
     *,
     clock=None,
     sender: RecordingVkSender | None = None,
+    media_cache=None,
     first_id: int = 1,
 ):
     catalog = FileSystemGameCatalog(ROOT / "games")
@@ -72,7 +74,7 @@ def make_stack(
         policy=VkMediaPolicy(),
         catalog=catalog,
         uow_factory=uow_factory,
-        media_cache=InMemoryVkMediaCache(),
+        media_cache=media_cache or InMemoryVkMediaCache(),
         community_id="100",
         clock=current_clock,
     )
@@ -225,6 +227,40 @@ async def test_processor_does_not_double_send_with_pump(
     assert first > 0
     await delivery.tick()
     assert len(sender.calls) == first
+
+
+async def test_successful_voice_cache_write_does_not_retry_delivery(
+    uow_factory: PostgresUnitOfWorkFactory,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    cache = PostgresVkMediaCache(session_factory)
+    service, delivery, _, sender = make_stack(
+        uow_factory,
+        media_cache=cache,
+    )
+    await reach_margo_articles(service)
+
+    await delivery.deliver_source_event(PLAYER, "margo-q9")
+    voice_calls = [call for call in sender.calls if call.method == "audio"]
+    assert len(voice_calls) == 1
+    voice_path = (
+        ROOT / "games/killing_margo/1.0.0/assets/phone_recording_vk.ogg"
+    )
+    assert await cache.get("100", sha256_file(voice_path), "voice") is not None
+
+    await delivery.tick()
+    assert len([call for call in sender.calls if call.method == "audio"]) == 1
+    async with session_factory() as db:
+        deliveries = (
+            await db.scalars(
+                select(OutboundDeliveryRow)
+                .where(OutboundDeliveryRow.source_event_id == "margo-q9")
+                .order_by(OutboundDeliveryRow.sequence_no)
+            )
+        ).all()
+    assert deliveries
+    assert all(row.status == "delivered" for row in deliveries)
+    assert all(row.attempts == 1 for row in deliveries)
 
 
 async def test_vk_flood_uses_retry_after(

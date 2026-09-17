@@ -394,7 +394,7 @@ class VkMediaCacheRow(Base):
             name="uq_vk_media_cache_identity",
         ),
         CheckConstraint(
-            "media_kind IN ('photo', 'audio', 'document')",
+            "media_kind IN ('photo', 'audio', 'document', 'voice')",
             name="ck_vk_media_cache_kind",
         ),
     )

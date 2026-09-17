@@ -106,7 +106,7 @@ async def test_margo_q9_persists_audio_and_scheduled_row(
     assert any("ты прав" in (call.text or "") for call in sender.calls)
     audio = next(call for call in sender.calls if call.method == "audio")
     assert audio.path == (
-        Path(ROOT) / "games/killing_margo/1.0.0/assets/phone_recording.mp3"
+        Path(ROOT) / "games/killing_margo/1.0.0/assets/phone_recording_vk.ogg"
     )
 
     async with uow_factory() as uow:
